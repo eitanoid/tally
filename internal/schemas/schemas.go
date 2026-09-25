@@ -4,31 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
-	// "reflect"
+	"github.com/segmentio/ksuid"
 )
 
-/*
- example habit?
- what if we want to add constraits eg. Dosage is of type weight
- {
- 	Name:
-	Description:
-	Schema: {
-	  -	Name: Medicine
-		Desciption: Medicine that you take
-		Type: String
-	  -	Name: Dose
-		Desciption: How much medication you took
-		Type: Int
-	  -	Name: TakenAt
-		Desciption: When you took your last dose
-		Type: Timestamp
-	}
- }
-
-*/
+// decisions to be made:
+//
+// naming conventions for fields? allow spaces? repalce spaces with - or _?
+// default fields like `added` might be worth making an uncommon name like `__added__` and interpreting that later since `added` could be a common name for a field
+// add logged at to db entry instead of schema
 
 type SupportedType string
 
@@ -38,6 +24,11 @@ const (
 	TypeFloat     SupportedType = "number"
 	TypeBool      SupportedType = "boolean"
 	TypeTimestamp SupportedType = "timestamp"
+)
+
+var (
+	ErrDuplicateField = errors.New("field name must be unique")
+	ErrInvalidRequest = errors.New("request not valid")
 )
 
 func Validate(s SupportedType) (SupportedType, error) {
@@ -66,9 +57,25 @@ type SchemaRequest struct {
 
 // HabitSchema is what gets persisted in the DB.
 type HabitSchema struct {
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	JSONSchemaRaw string `json:"json_schema"` // Raw JSON string stored in SQLite
+	HabitID       string    `db:"habit_id" json:"habit_id"`
+	Version       int       `json:"version" db:"version"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	JSONSchemaRaw string    `json:"json_schema"` // Raw JSON string stored in SQLite
+	CreatedAt     time.Time `db:"created_at"  json:"created_at"`
+}
+
+// SchemaRef is the minimal identifier for fetching a specific schema version
+type SchemaRef struct {
+	HabitID string `db:"habit_id"`
+	Version int    `json:"version"`
+}
+
+func (h *HabitSchema) Ref() SchemaRef {
+	return SchemaRef{
+		HabitID: h.HabitID,
+		Version: h.Version,
+	}
 }
 
 // BuildJSONSchema converts a user's field definitions into a valid JSON Schema object.
@@ -116,9 +123,48 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
+// Validate schema request doesn't contain duplicate key names
+func (s *SchemaRequest) Validate() error {
+	keys := make(map[string]struct{}, len(s.Fields))
+	for _, field := range s.Fields {
+		if _, exists := keys[field.KeyName]; exists {
+			return ErrDuplicateField
+		}
+	}
+	return nil
+}
+
+func NewSchemaRequest(name, description string) *SchemaRequest {
+	return &SchemaRequest{
+		Name:        name,
+		Description: description,
+	}
+}
+
+// Add field to schema
+func (s *SchemaRequest) WithField(name, descripton string, typ SupportedType, required bool) *SchemaRequest {
+	s.Fields = append(s.Fields, SchemaKey{
+		KeyName:     name,
+		Description: descripton,
+		Type:        typ,
+		Required:    required,
+	})
+	return s
+}
+
 // CreateHabitSchema creates a new habit definition ready for SQLite insertion.
-func CreateHabitSchema(req SchemaRequest) (*HabitSchema, error) {
-	schemaObj, err := BuildJSONSchema(req)
+func (req *SchemaRequest) Create() (*HabitSchema, error) {
+
+	if req == nil || req.Fields == nil {
+		return nil, fmt.Errorf("failed to create habit: %w", ErrInvalidRequest)
+	}
+
+	err := req.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create habit: %w", err)
+	}
+
+	schemaObj, err := BuildJSONSchema(*req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build a new json shcema: %w", err)
 	}
@@ -131,6 +177,8 @@ func CreateHabitSchema(req SchemaRequest) (*HabitSchema, error) {
 
 	return &HabitSchema{
 		Name:          req.Name,
+		Version:       1,
+		HabitID:       ksuid.New().String(),
 		Description:   req.Description,
 		JSONSchemaRaw: string(rawJSON),
 	}, nil
