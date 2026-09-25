@@ -1,4 +1,4 @@
-module habit-tracker
+module github.com/eitanoid/habit-tracker
 
 go 1.26.3
 
