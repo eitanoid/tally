@@ -1,17 +1,39 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"github.com/eitanoid/habit-tracker/internal/schemas"
+	"log"
 
-	_ "github.com/ncruces/go-sqlite3/driver"
+	"encoding/json"
+
+	"github.com/eitanoid/habit-tracker/internal/repository"
+	"github.com/eitanoid/habit-tracker/internal/schemas"
 )
 
 func main() {
-	var version string
-	db, _ := sql.Open("sqlite3", "file:my.db")
-	defer fmt.Println(db.Close())
-	db.QueryRow(`SELECT sqlite_version()`).Scan(&version)
-	fmt.Println(version)
+
+	ctx := context.Background()
+
+	req := schemas.NewSchemaRequest("Step Tracking", "Number of steps taken in a walk").WithField(
+		"Step count", "Number of steps taken", schemas.TypeInt, true,
+	).WithField(
+		"Left at", "Time of departing for the walk", schemas.TypeTimestamp, true,
+	)
+	s, err := req.Create()
+	if err != nil {
+		fmt.Printf("failed to create habit schema from request: %s", err.Error())
+	}
+	bytes, _ := json.Marshal(s)
+	fmt.Println(string(bytes))
+
+	repo, err := repository.NewSQLiteClient("my.db")
+	if err != nil {
+		log.Fatalf("failed to create database: %s", err.Error())
+	}
+	defer repo.Close()
+
+	if err := repo.InsertSchema(ctx, s); err != nil {
+		log.Fatalf("failed to insert schema: %s", err.Error())
+	}
 }
