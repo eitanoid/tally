@@ -185,7 +185,12 @@ func (req *SchemaRequest) Create() (*HabitSchema, error) {
 }
 
 // ValidateEntry checks if an incoming dynamic payload matches a stored habit schema.
-func ValidateEntry(rawSchemaJSON string, payload map[string]any) error {
+func ValidateEntry(rawSchemaJSON string, payload string) error {
+	var pld map[string]any
+	if err := json.Unmarshal([]byte(payload), &pld); err != nil {
+		return fmt.Errorf("invalid payload: %w", err)
+	}
+
 	var sch jsonschema.Schema
 	if err := json.Unmarshal([]byte(rawSchemaJSON), &sch); err != nil {
 		return fmt.Errorf("invalid stored schema: %w", err)

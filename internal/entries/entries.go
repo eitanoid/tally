@@ -1,14 +1,12 @@
 package entries
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/eitanoid/habit-tracker/internal/schemas"
 	"github.com/segmentio/ksuid"
 )
-
-type EntryRequest struct {
-}
 
 type HabitEntry struct {
 	ID            string    `db:"id" json:"id"`
@@ -22,11 +20,14 @@ type HabitEntry struct {
 func CreateHabitEntry(schema schemas.HabitSchema, data string) (HabitEntry, error) {
 
 	// validate against schema
-	// instanciate schema
+	if err := schemas.ValidateEntry(schema.JSONSchemaRaw, data); err != nil {
+		return HabitEntry{}, fmt.Errorf("failed to validate entry data: %w", err)
+	}
 	return HabitEntry{
 		ID:            ksuid.New().String(),
 		HabitID:       schema.HabitID,
 		SchemaVersion: schema.Version,
+		Data:          data,
 	}, nil
 }
 
