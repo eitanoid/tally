@@ -19,6 +19,14 @@ func NewTallyService(repo repository.Repository) *TallyService {
 	}
 }
 
+type PaginatedResult struct {
+	Entries    []entries.TallyEntry `json:"entries"`
+	TotalCount int                  `json:"total_count"`
+	Limit      int                  `json:"limit"`
+	Offset     int                  `json:"offset"`
+	HasMore    bool                 `json:"has_more"`
+}
+
 // CreateSchema builds a new tally schema and persists it.
 func (s *TallyService) CreateSchema(ctx context.Context, req *schemas.SchemaRequest) (*schemas.TallySchema, error) {
 
@@ -67,6 +75,23 @@ func (s *TallyService) RecordEntry(ctx context.Context, tallyID string, rawData 
 }
 
 // ListEntries fetches recorded logs for a given tally up to limit.
-func (s *TallyService) ListEntries(ctx context.Context, tallyID string, limit int) ([]entries.TallyEntry, error) {
-	return s.repo.GetEntriesByTallyID(ctx, tallyID, limit)
+func (s *TallyService) ListEntries(ctx context.Context, tallyID string, limit int, offset int) (*PaginatedResult, error) {
+	entries, total, err := s.repo.GetEntriesByTallyID(ctx, repository.EntryFilter{
+		TallyID: tallyID,
+		Limit:   limit,
+		Offset:  offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	hasMore := (offset + len(entries)) < total
+
+	return &PaginatedResult{
+		Entries:    entries,
+		TotalCount: total,
+		Limit:      limit,
+		Offset:     offset,
+		HasMore:    hasMore,
+	}, nil
 }

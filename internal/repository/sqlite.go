@@ -201,9 +201,21 @@ func (c *SqliteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntr
 	return nil
 }
 
-func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, tallyID string, limit int) ([]entries.TallyEntry, error) {
-	if limit <= 0 {
-		limit = 50
+// GetEntriesByTallyID retrieves a paginated slice of entries alongside the total entry count.
+func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error) {
+
+	var totalCount int
+	countQuery := `SELECT COUNT(*) FROM entries WHERE tally_id = ?`
+	if err := c.db.QueryRowContext(ctx, countQuery, filter.TallyID).Scan(&totalCount); err != nil {
+		return nil, 0, fmt.Errorf("failed to count entries: %w", err)
+	}
+
+	// Clamp limit
+	if filter.Limit <= 0 {
+		filter.Limit = 50
+	}
+	if filter.Limit > 200 {
+		filter.Limit = 200
 	}
 
 	query := `
@@ -211,11 +223,11 @@ func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, tallyID string, 
 		FROM tally_entries
 		WHERE tally_id = ?
 		ORDER BY created_at DESC
-		LIMIT ?;
+		LIMIT ? OFFSET ?;
 	`
-	rows, err := c.db.QueryContext(ctx, query, tallyID, limit)
+	rows, err := c.db.QueryContext(ctx, query, filter.TallyID, filter.Limit, filter.Offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query entries for tally %s: %w", tallyID, err)
+		return nil, 0, fmt.Errorf("failed to query entries for tally %s: %w", filter.TallyID, err)
 	}
 	defer rows.Close()
 
@@ -223,9 +235,9 @@ func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, tallyID string, 
 	for rows.Next() {
 		var e entries.TallyEntry
 		if err := rows.Scan(&e.ID, &e.TallyID, &e.SchemaVersion, &e.Data, &e.CreatedAt, &e.UpdatedAt); err != nil {
-			return nil, fmt.Errorf("failed to scan entry row: %w", err)
+			return nil, 0, fmt.Errorf("failed to scan entry row: %w", err)
 		}
 		result = append(result, e)
 	}
-	return result, nil
+	return result, totalCount, nil
 }

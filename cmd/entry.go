@@ -41,10 +41,11 @@ var entryListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List entries logged for a tally",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		list, err := TallyService.ListEntries(cmd.Context(), entryTallyID, entryLimit)
+		paginatedResults, err := TallyService.ListEntries(cmd.Context(), entryTallyID, entryLimit, 0)
 		if err != nil {
 			return err
 		}
+		list := paginatedResults.Entries
 
 		if len(list) == 0 {
 			fmt.Printf("No entries found for tally '%s'.\n", entryTallyID)

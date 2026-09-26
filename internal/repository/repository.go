@@ -7,6 +7,13 @@ import (
 	"github.com/eitanoid/tally/internal/schemas"
 )
 
+// Pagination filter for Entries
+type EntryFilter struct {
+	TallyID string
+	Limit   int
+	Offset  int
+}
+
 type Repository interface {
 	// Schema Operations
 	InsertSchema(ctx context.Context, schema *schemas.TallySchema) error
@@ -16,7 +23,5 @@ type Repository interface {
 
 	// Entry Operations
 	InsertEntry(ctx context.Context, entry *entries.TallyEntry) error
-	GetEntriesByTallyID(ctx context.Context, tallyID string, limit int) ([]entries.TallyEntry, error)
-
-	// Search tallys by name
+	GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error)
 }
