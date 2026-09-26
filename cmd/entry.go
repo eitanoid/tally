@@ -8,7 +8,7 @@ import (
 
 var entryCmd = &cobra.Command{
 	Use:   "entry",
-	Short: "Log and view habit entries",
+	Short: "Log and view tally entries",
 }
 
 var (
@@ -20,7 +20,7 @@ var (
 var entryLogCmd = &cobra.Command{
 	Use:     "log",
 	Short:   "Log a new entry against a habit schema",
-	Example: `  habit entry log -h <HABIT_ID> -j '{"Dose": 20, "Taken at": "2026-09-25T10:00:00Z"}'`,
+	Example: `  habit entry log -t <HABIT_ID> -d '{"book": "The Stranger", "pages": 20}'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		entry, err := HabitService.RecordEntry(cmd.Context(), entryHabitID, entryData)
 		if err != nil {
@@ -58,14 +58,14 @@ var entryListCmd = &cobra.Command{
 }
 
 func init() {
-	entryLogCmd.Flags().StringVarP(&entryHabitID, "habit", "t", "", "Target habit ID")
-	entryLogCmd.Flags().StringVarP(&entryData, "data", "j", "", "JSON data payload string")
-	_ = entryLogCmd.MarkFlagRequired("habit")
+	entryLogCmd.Flags().StringVarP(&entryHabitID, "tally", "t", "", "Target tally ID")
+	entryLogCmd.Flags().StringVarP(&entryData, "data", "d", "", "JSON data payload string")
+	_ = entryLogCmd.MarkFlagRequired("tally")
 	_ = entryLogCmd.MarkFlagRequired("data")
 
-	entryListCmd.Flags().StringVarP(&entryHabitID, "habit", "z", "", "Target habit ID")
+	entryListCmd.Flags().StringVarP(&entryHabitID, "tally", "t", "", "Target habit ID")
 	entryListCmd.Flags().IntVarP(&entryLimit, "limit", "l", 20, "Max entries to fetch")
-	_ = entryListCmd.MarkFlagRequired("habit")
+	_ = entryListCmd.MarkFlagRequired("tally")
 
 	entryCmd.AddCommand(entryLogCmd)
 	entryCmd.AddCommand(entryListCmd)

@@ -42,5 +42,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&dbPath, "db", "d", "habits.db", "Path to SQLite database file")
+	rootCmd.PersistentFlags().StringVar(&dbPath, "db", "habits.db", "Path to SQLite database file")
 }
