@@ -1,6 +1,10 @@
-# 
+# Tally
 
-CLI example:
+Tally is a local, schema-enforced personal data engine for tracking literally anything.
+
+Define custom JSON schemas once, then log structured, validated data effortlessly with confidence.
+
+## CLI example:
 ```sh
 $ tally schema list
 > No tally schemas found.
@@ -48,6 +52,7 @@ $ tally entry list -t 3Jrf7GMstuu7PrzljZ6hNVidCmf
 > 3JrfSUesJ1TLrVM0gR86dpDDr1Q   v1        2026-09-26T12:01:47Z   {"book":"The Fall", "pages": 23, "time":"2026-09-26T13:01:47+01:00"}
 > 3JrfPNjVVGFmo7htV8Y8WssmwFp   v1        2026-09-26T12:01:22Z   {"book":"The Stranger", "pages": 20, "time":"2026-09-26T13:01:22+01:00"}
 ```
+
 Generic habit tracking app for Android (in the future)
 
 Features:
