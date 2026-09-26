@@ -4,28 +4,28 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/eitanoid/habit-tracker/internal/repository"
-	"github.com/eitanoid/habit-tracker/internal/service"
+	"github.com/eitanoid/tally/internal/repository"
+	"github.com/eitanoid/tally/internal/service"
 	"github.com/spf13/cobra"
 )
 
 var (
 	dbPath       string
 	repo         *repository.SqliteClient
-	HabitService *service.HabitService
+	TallyService *service.TallyService
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "habit",
-	Short: "Modular, versioned habit tracking CLI",
-	Long:  `A local-first, offline habit tracker backed by SQLite and versioned JSON schemas.`,
+	Use:   "tally",
+	Short: "Modular, versioned tally tracking CLI",
+	Long:  `A local-first, offline tally tracker backed by SQLite and versioned JSON schemas.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		repo, err = repository.NewSQLiteClient(dbPath)
 		if err != nil {
 			return fmt.Errorf("failed to open sqlite database at %s: %s", dbPath, err.Error())
 		}
-		HabitService = service.NewHabitService(repo)
+		TallyService = service.NewTallyService(repo)
 		return nil
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {

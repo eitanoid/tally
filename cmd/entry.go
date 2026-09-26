@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
+	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -12,58 +16,67 @@ var entryCmd = &cobra.Command{
 }
 
 var (
-	entryHabitID string
+	entryTallyID string
 	entryData    string
 	entryLimit   int
 )
 
 var entryLogCmd = &cobra.Command{
 	Use:     "log",
-	Short:   "Log a new entry against a habit schema",
-	Example: `  habit entry log -t <HABIT_ID> -d '{"book": "The Stranger", "pages": 20}'`,
+	Short:   "Log a new entry against a tally schema",
+	Example: `  tally entry log -t <TALLY_ID> -d '{"book": "The Stranger", "pages": 20}'`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		entry, err := HabitService.RecordEntry(cmd.Context(), entryHabitID, entryData)
+		entry, err := TallyService.RecordEntry(cmd.Context(), entryTallyID, entryData)
 		if err != nil {
 			return fmt.Errorf("failed to log entry: %w", err)
 		}
 
-		fmt.Printf("Logged entry %s for habit '%s' (v%d) at %s\n",
-			entry.ID, entry.HabitID, entry.SchemaVersion, entry.CreatedAt.Format("2006-01-02 15:04:05"))
+		fmt.Printf("Logged entry %s for tally '%s' (v%d) at %s\n",
+			entry.ID, entry.TallyID, entry.SchemaVersion, entry.CreatedAt.Format("2006-01-02 15:04:05"))
 		return nil
 	},
 }
 
 var entryListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List entries logged for a habit",
+	Short: "List entries logged for a tally",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		list, err := HabitService.ListEntries(cmd.Context(), entryHabitID, entryLimit)
+		list, err := TallyService.ListEntries(cmd.Context(), entryTallyID, entryLimit)
 		if err != nil {
 			return err
 		}
 
 		if len(list) == 0 {
-			fmt.Printf("No entries found for habit '%s'.\n", entryHabitID)
+			fmt.Printf("No entries found for tally '%s'.\n", entryTallyID)
 			return nil
 		}
 
-		fmt.Printf("%-27s %-10s %-20s %s\n", "ENTRY ID", "VERSION", "CREATED AT", "DATA")
-		fmt.Println("--------------------------------------------------------------------------------")
+		var buf bytes.Buffer
+		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
+		fmt.Fprintln(w, "ENTRY ID\tVERSION\tCREATED AT\tDATA")
 		for _, e := range list {
-			fmt.Printf("%-27s v%-9d %-20s %s\n",
-				e.ID, e.SchemaVersion, e.CreatedAt.Format("2006-01-02 15:04:05"), e.Data)
+			fmt.Fprintf(w, "%s\tv%d\t%s\t%s\n",
+				e.ID, e.SchemaVersion, e.CreatedAt.Format(time.RFC3339), e.Data)
 		}
+		if err := w.Flush(); err != nil {
+			return err
+		}
+		header, body, _ := strings.Cut(buf.String(), "\n")
+		fmt.Println(header)
+		fmt.Println(strings.Repeat("-", len(header)))
+		fmt.Print(body)
+
 		return nil
 	},
 }
 
 func init() {
-	entryLogCmd.Flags().StringVarP(&entryHabitID, "tally", "t", "", "Target tally ID")
+	entryLogCmd.Flags().StringVarP(&entryTallyID, "tally", "t", "", "Target tally ID")
 	entryLogCmd.Flags().StringVarP(&entryData, "data", "d", "", "JSON data payload string")
 	_ = entryLogCmd.MarkFlagRequired("tally")
 	_ = entryLogCmd.MarkFlagRequired("data")
 
-	entryListCmd.Flags().StringVarP(&entryHabitID, "tally", "t", "", "Target habit ID")
+	entryListCmd.Flags().StringVarP(&entryTallyID, "tally", "t", "", "Target tally ID")
 	entryListCmd.Flags().IntVarP(&entryLimit, "limit", "l", 20, "Max entries to fetch")
 	_ = entryListCmd.MarkFlagRequired("tally")
 
