@@ -1,6 +1,6 @@
 package main
 
-import "github.com/eitanoid/habit-tracker/cmd"
+import "github.com/eitanoid/tally/cmd"
 
 func main() {
 	cmd.Execute()

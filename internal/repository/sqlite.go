@@ -8,8 +8,8 @@ import (
 
 	"embed"
 
-	"github.com/eitanoid/habit-tracker/internal/entries"
-	"github.com/eitanoid/habit-tracker/internal/schemas"
+	"github.com/eitanoid/tally/internal/entries"
+	"github.com/eitanoid/tally/internal/schemas"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
 )
@@ -80,14 +80,14 @@ func runMigrations(ctx context.Context, db *sql.DB) error {
 
 // --
 
-func (c *SqliteClient) InsertSchema(ctx context.Context, schema *schemas.HabitSchema) error {
+func (c *SqliteClient) InsertSchema(ctx context.Context, schema *schemas.TallySchema) error {
 	query := `
-		INSERT INTO habit_schemas (habit_id, version, name, description, json_schema)
+		INSERT INTO tally_schemas (tally_id, version, name, description, json_schema)
 		VALUES (?, ?, ?, ?, ?)
 		RETURNING created_at;
 	`
 	err := c.db.QueryRowContext(ctx, query,
-		schema.HabitID,
+		schema.TallyID,
 		schema.Version,
 		schema.Name,
 		schema.Description,
@@ -95,22 +95,22 @@ func (c *SqliteClient) InsertSchema(ctx context.Context, schema *schemas.HabitSc
 	).Scan(&schema.CreatedAt)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert habit schema: %w", err)
+		return fmt.Errorf("failed to insert tally schema: %w", err)
 	}
 	return nil
 }
 
-func (c *SqliteClient) GetLatestSchemaByID(ctx context.Context, habitID string) (*schemas.HabitSchema, error) {
+func (c *SqliteClient) GetLatestSchemaByID(ctx context.Context, tallyID string) (*schemas.TallySchema, error) {
 	query := `
-		SELECT habit_id, version, name, description, json_schema, created_at
-		FROM habit_schemas
-		WHERE habit_id = ?
+		SELECT tally_id, version, name, description, json_schema, created_at
+		FROM tally_schemas
+		WHERE tally_id = ?
 		ORDER BY version DESC
 		LIMIT 1;
 	`
-	var s schemas.HabitSchema
-	err := c.db.QueryRowContext(ctx, query, habitID).Scan(
-		&s.HabitID,
+	var s schemas.TallySchema
+	err := c.db.QueryRowContext(ctx, query, tallyID).Scan(
+		&s.TallyID,
 		&s.Version,
 		&s.Name,
 		&s.Description,
@@ -119,22 +119,22 @@ func (c *SqliteClient) GetLatestSchemaByID(ctx context.Context, habitID string) 
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("schema not found for habit_id %s: %w", habitID, err)
+			return nil, fmt.Errorf("schema not found for tally_id %s: %w", tallyID, err)
 		}
 		return nil, fmt.Errorf("failed to query latest schema: %w", err)
 	}
 	return &s, nil
 }
 
-func (c *SqliteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef) (*schemas.HabitSchema, error) {
+func (c *SqliteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef) (*schemas.TallySchema, error) {
 	query := `
-		SELECT habit_id, version, name, description, json_schema, created_at
-		FROM habit_schemas
-		WHERE habit_id = ? AND version = ?;
+		SELECT tally_id, version, name, description, json_schema, created_at
+		FROM tally_schemas
+		WHERE tally_id = ? AND version = ?;
 	`
-	var s schemas.HabitSchema
-	err := c.db.QueryRowContext(ctx, query, ref.HabitID, ref.Version).Scan(
-		&s.HabitID,
+	var s schemas.TallySchema
+	err := c.db.QueryRowContext(ctx, query, ref.TallyID, ref.Version).Scan(
+		&s.TallyID,
 		&s.Version,
 		&s.Name,
 		&s.Description,
@@ -143,21 +143,21 @@ func (c *SqliteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("schema not found for ref (%s v%d): %w", ref.HabitID, ref.Version, err)
+			return nil, fmt.Errorf("schema not found for ref (%s v%d): %w", ref.TallyID, ref.Version, err)
 		}
 		return nil, fmt.Errorf("failed to query schema by ref: %w", err)
 	}
 	return &s, nil
 }
 
-func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.HabitSchema, error) {
+func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.TallySchema, error) {
 	query := `
-		SELECT habit_id, version, name, description, json_schema, created_at
-		FROM habit_schemas
-		WHERE (habit_id, version) IN (
-			SELECT habit_id, MAX(version)
-			FROM habit_schemas
-			GROUP BY habit_id
+		SELECT tally_id, version, name, description, json_schema, created_at
+		FROM tally_schemas
+		WHERE (tally_id, version) IN (
+			SELECT tally_id, MAX(version)
+			FROM tally_schemas
+			GROUP BY tally_id
 		)
 		ORDER BY name ASC;
 	`
@@ -167,10 +167,10 @@ func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.Habit
 	}
 	defer rows.Close()
 
-	var result []schemas.HabitSchema
+	var result []schemas.TallySchema
 	for rows.Next() {
-		var s schemas.HabitSchema
-		if err := rows.Scan(&s.HabitID, &s.Version, &s.Name, &s.Description, &s.JSONSchemaRaw, &s.CreatedAt); err != nil {
+		var s schemas.TallySchema
+		if err := rows.Scan(&s.TallyID, &s.Version, &s.Name, &s.Description, &s.JSONSchemaRaw, &s.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan schema row: %w", err)
 		}
 		result = append(result, s)
@@ -182,47 +182,47 @@ func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.Habit
 // Entry Operations
 // -----------------------------------------------------------------------------
 
-func (c *SqliteClient) InsertEntry(ctx context.Context, entry *entries.HabitEntry) error {
+func (c *SqliteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntry) error {
 	query := `
-		INSERT INTO habit_entries (id, habit_id, schema_version, data)
+		INSERT INTO tally_entries (id, tally_id, schema_version, data)
 		VALUES (?, ?, ?, ?)
 		RETURNING created_at, updated_at;
 	`
 	err := c.db.QueryRowContext(ctx, query,
 		entry.ID,
-		entry.HabitID,
+		entry.TallyID,
 		entry.SchemaVersion,
 		entry.Data,
 	).Scan(&entry.CreatedAt, &entry.UpdatedAt)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert habit entry: %w", err)
+		return fmt.Errorf("failed to insert tally entry: %w", err)
 	}
 	return nil
 }
 
-func (c *SqliteClient) GetEntriesByHabitID(ctx context.Context, habitID string, limit int) ([]entries.HabitEntry, error) {
+func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, tallyID string, limit int) ([]entries.TallyEntry, error) {
 	if limit <= 0 {
 		limit = 50
 	}
 
 	query := `
-		SELECT id, habit_id, schema_version, data, created_at, updated_at
-		FROM habit_entries
-		WHERE habit_id = ?
+		SELECT id, tally_id, schema_version, data, created_at, updated_at
+		FROM tally_entries
+		WHERE tally_id = ?
 		ORDER BY created_at DESC
 		LIMIT ?;
 	`
-	rows, err := c.db.QueryContext(ctx, query, habitID, limit)
+	rows, err := c.db.QueryContext(ctx, query, tallyID, limit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query entries for habit %s: %w", habitID, err)
+		return nil, fmt.Errorf("failed to query entries for tally %s: %w", tallyID, err)
 	}
 	defer rows.Close()
 
-	var result []entries.HabitEntry
+	var result []entries.TallyEntry
 	for rows.Next() {
-		var e entries.HabitEntry
-		if err := rows.Scan(&e.ID, &e.HabitID, &e.SchemaVersion, &e.Data, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		var e entries.TallyEntry
+		if err := rows.Scan(&e.ID, &e.TallyID, &e.SchemaVersion, &e.Data, &e.CreatedAt, &e.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan entry row: %w", err)
 		}
 		result = append(result, e)

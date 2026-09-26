@@ -1,62 +1,83 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"text/tabwriter"
+	"time"
 
-	"github.com/eitanoid/habit-tracker/internal/schemas"
+	"github.com/eitanoid/tally/internal/schemas"
 	"github.com/spf13/cobra"
 )
 
 var schemaCmd = &cobra.Command{
 	Use:   "schema",
-	Short: "Manage habit schemas",
+	Short: "Manage tally schemas",
 }
 
 var schemaListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all active habit schemas",
+	Short: "List all active tally schemas",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		list, err := HabitService.ListSchemas(cmd.Context())
+		list, err := TallyService.ListSchemas(cmd.Context())
 		if err != nil {
 			return err
 		}
 
 		if len(list) == 0 {
-			fmt.Println("No habit schemas found.")
+			fmt.Println("No tally schemas found.")
 			return nil
 		}
 
-		fmt.Printf("%-24s %-10s %-20s %s\n", "HABIT ID", "VERSION", "NAME", "CREATED AT")
-		fmt.Println("--------------------------------------------------------------------------------")
+		var buf bytes.Buffer
+		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
+		fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT")
 		for _, s := range list {
-			fmt.Printf("%-24s v%-9d %-20s %s\n", s.HabitID, s.Version, s.Name, s.CreatedAt.Format("2006-01-02 15:04"))
+			fmt.Fprintf(
+				w, "%s\tv%d\t%s\t%s\n", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339),
+			)
 		}
+		if err := w.Flush(); err != nil {
+			return err
+		}
+		header, body, _ := strings.Cut(buf.String(), "\n")
+		fmt.Println(header)
+		fmt.Println(strings.Repeat("-", len(header)))
+		fmt.Print(body)
 		return nil
 	},
 }
 
 var schemaGetCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get an active habit schemas",
+	Short: "Get an active tally schemas",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var habitId string
+		var tallyID string
 		if len(args) >= 1 {
-			habitId = args[0]
+			tallyID = args[0]
 		} else {
 			return errors.New("expected tally id. got nothing")
 		}
-		s, err := HabitService.GetLatestSchema(cmd.Context(), habitId)
+		s, err := TallyService.GetLatestSchema(cmd.Context(), tallyID)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("%-24s %-10s %-20s %-20s %s\n", "HABIT ID", "VERSION", "NAME", "CREATED AT", "SCHEMA")
-		fmt.Println("--------------------------------------------------------------------------------")
-		fmt.Printf("%-24s v%-9d %-20s %-20s %s\n", s.HabitID, s.Version, s.Name, s.CreatedAt.Format("2006-01-02 15:04"), s.JSONSchemaRaw)
+		var buf bytes.Buffer
+		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
+		fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA")
+		fmt.Fprintf(w, "%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw)
+		if err := w.Flush(); err != nil {
+			return err
+		}
+		header, body, _ := strings.Cut(buf.String(), "\n")
+		fmt.Println(header)
+		fmt.Println(strings.Repeat("-", len(header)))
+		fmt.Print(body)
 		return nil
 	},
 }
@@ -69,8 +90,8 @@ var (
 
 var schemaCreateCmd = &cobra.Command{
 	Use:     "create",
-	Short:   "Create a new habit schema",
-	Example: `  habit schema create -n "Reading" -m "Tracking reading habits" -f "book:Name of the book:string:true" -f "pages:number of pages read:integer:true"`,
+	Short:   "Create a new tally schema",
+	Example: `  tally schema create -n "Reading" -m "Tracking reading habits" -f "book:Name of the book:string:true" -f "pages:number of pages read:integer:true"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		req := schemas.NewSchemaRequest(schemaName, schemaDesc)
 		for _, field := range schemaFields {
@@ -81,13 +102,13 @@ var schemaCreateCmd = &cobra.Command{
 			req.WithField(name, desc, schemas.SupportedType(typ), required)
 		}
 
-		s, err := HabitService.CreateSchema(cmd.Context(), req)
+		s, err := TallyService.CreateSchema(cmd.Context(), req)
 		if err != nil {
 			return err
 		}
 
 		rawJSON, _ := json.MarshalIndent(s, "", "  ")
-		fmt.Printf("Created schema for '%s' (%s, v%d):\n%s\n", s.Name, s.HabitID, s.Version, string(rawJSON))
+		fmt.Printf("Created schema for '%s' (%s, v%d):\n%s\n", s.Name, s.TallyID, s.Version, string(rawJSON))
 		return nil
 	},
 }
@@ -119,8 +140,8 @@ func processField(field string) (name string, description string, fieldType stri
 	return name, description, fieldType, required, nil
 }
 func init() {
-	schemaCreateCmd.Flags().StringVarP(&schemaName, "name", "n", "", "Name of the habit")
-	schemaCreateCmd.Flags().StringVarP(&schemaDesc, "desc", "m", "", "Description of the habit")
+	schemaCreateCmd.Flags().StringVarP(&schemaName, "name", "n", "", "Name of the tally")
+	schemaCreateCmd.Flags().StringVarP(&schemaDesc, "desc", "m", "", "Description of the tally")
 	schemaCreateCmd.Flags().StringSliceVarP(&schemaFields, "field", "f", []string{}, "Fields to define")
 
 	_ = schemaCreateCmd.MarkFlagRequired("name")

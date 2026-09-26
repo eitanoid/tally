@@ -48,16 +48,16 @@ type SchemaKey struct {
 	Required    bool          `json:"required"`
 }
 
-// SchemaRequest is the payload sent when a user creates a new habit.
+// SchemaRequest is the payload sent when a user creates a new tally.
 type SchemaRequest struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Fields      []SchemaKey `json:"fields"`
 }
 
-// HabitSchema is what gets persisted in the DB.
-type HabitSchema struct {
-	HabitID       string    `db:"habit_id" json:"habit_id"`
+// TallySchema is what gets persisted in the DB.
+type TallySchema struct {
+	TallyID       string    `db:"tally_id" json:"tally_id"`
 	Version       int       `json:"version" db:"version"`
 	Name          string    `json:"name"`
 	Description   string    `json:"description"`
@@ -67,13 +67,13 @@ type HabitSchema struct {
 
 // SchemaRef is the minimal identifier for fetching a specific schema version
 type SchemaRef struct {
-	HabitID string `db:"habit_id"`
+	TallyID string `db:"tally_id"`
 	Version int    `json:"version"`
 }
 
-func (h *HabitSchema) Ref() SchemaRef {
+func (h *TallySchema) Ref() SchemaRef {
 	return SchemaRef{
-		HabitID: h.HabitID,
+		TallyID: h.TallyID,
 		Version: h.Version,
 	}
 }
@@ -154,16 +154,16 @@ func (s *SchemaRequest) WithField(name, descripton string, typ SupportedType, re
 	return s
 }
 
-// CreateHabitSchema creates a new habit definition ready for SQLite insertion.
-func (req *SchemaRequest) Create() (*HabitSchema, error) {
+// Create creates a new tally definition ready for SQLite insertion.
+func (req *SchemaRequest) Create() (*TallySchema, error) {
 
 	if req == nil || req.Fields == nil {
-		return nil, fmt.Errorf("failed to create habit: %w", ErrInvalidRequest)
+		return nil, fmt.Errorf("failed to create tally: %w", ErrInvalidRequest)
 	}
 
 	err := req.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create habit: %w", err)
+		return nil, fmt.Errorf("failed to create tally: %w", err)
 	}
 
 	schemaObj, err := BuildJSONSchema(*req)
@@ -177,16 +177,16 @@ func (req *SchemaRequest) Create() (*HabitSchema, error) {
 		return nil, fmt.Errorf("failed to marshal json schema: %w", err)
 	}
 
-	return &HabitSchema{
+	return &TallySchema{
 		Name:          req.Name,
 		Version:       1,
-		HabitID:       ksuid.New().String(),
+		TallyID:       ksuid.New().String(),
 		Description:   req.Description,
 		JSONSchemaRaw: string(rawJSON),
 	}, nil
 }
 
-// ValidateEntry checks if an incoming dynamic payload matches a stored habit schema.
+// ValidateEntry checks if an incoming dynamic payload matches a stored tally schema.
 func ValidateEntry(rawSchemaJSON string, payload string) error {
 	var pld map[string]any
 	if err := json.Unmarshal([]byte(payload), &pld); err != nil {
