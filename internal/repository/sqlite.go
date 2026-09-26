@@ -205,7 +205,7 @@ func (c *SqliteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntr
 func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error) {
 
 	var totalCount int
-	countQuery := `SELECT COUNT(*) FROM entries WHERE tally_id = ?`
+	countQuery := `SELECT COUNT(*) FROM tally_entries WHERE tally_id = ?`
 	if err := c.db.QueryRowContext(ctx, countQuery, filter.TallyID).Scan(&totalCount); err != nil {
 		return nil, 0, fmt.Errorf("failed to count entries: %w", err)
 	}
