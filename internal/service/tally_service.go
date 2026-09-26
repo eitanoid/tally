@@ -22,7 +22,7 @@ func NewTallyService(repo repository.Repository) *TallyService {
 // CreateSchema builds a new tally schema and persists it.
 func (s *TallyService) CreateSchema(ctx context.Context, req *schemas.SchemaRequest) (*schemas.TallySchema, error) {
 
-	schema, err := req.Create()
+	schema, err := req.Build()
 	if err != nil {
 		return nil, fmt.Errorf("service failed to create schema domain object: %w", err)
 	}

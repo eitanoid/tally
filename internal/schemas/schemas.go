@@ -19,11 +19,15 @@ import (
 type SupportedType string
 
 const (
-	TypeString    SupportedType = "string"
-	TypeInt       SupportedType = "integer" // support units in the future?
-	TypeFloat     SupportedType = "number"
-	TypeBool      SupportedType = "boolean"
-	TypeTimestamp SupportedType = "timestamp"
+	// would be nice to add units in the future to int and float
+	TypeString   SupportedType = "string"
+	TypeInt      SupportedType = "integer"
+	TypeFloat    SupportedType = "number"
+	TypeBool     SupportedType = "boolean"
+	TypeDateTime SupportedType = "date-time"
+	TypeDate     SupportedType = "date"
+	TypeTime     SupportedType = "time"
+	TypeDuration SupportedType = "duration"
 )
 
 var (
@@ -31,18 +35,19 @@ var (
 	ErrInvalidRequest = errors.New("request not valid")
 )
 
-func Validate(s SupportedType) (SupportedType, error) {
-	switch s {
-	case TypeString, TypeInt, TypeFloat, TypeBool:
-		return s, nil
+func Valid(t SupportedType) bool {
+	switch t {
+	case TypeString, TypeInt, TypeFloat, TypeBool, TypeDateTime, TypeDate, TypeTime, TypeDuration:
+		return true
 	default:
-		return s, errors.New("Invalid type")
+		return false
 	}
 }
 
-// SchemaKey defines a single field that the user wants to track.
-type SchemaKey struct {
-	KeyName     string        `json:"key_name"`
+// FieldDefinition defines a single field that the user wants to track.
+type FieldDefinition struct {
+	Key         string        `json:"key"`   // eg. book_title (json safe key)
+	Label       string        `json:"label"` // e.g. "Book Title" (user display label)
 	Description string        `json:"description,omitempty"`
 	Type        SupportedType `json:"type"`
 	Required    bool          `json:"required"`
@@ -50,9 +55,10 @@ type SchemaKey struct {
 
 // SchemaRequest is the payload sent when a user creates a new tally.
 type SchemaRequest struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Fields      []SchemaKey `json:"fields"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Fields      []FieldDefinition `json:"fields"`
+	err         error             // fluent builder error
 }
 
 // TallySchema is what gets persisted in the DB.
@@ -86,6 +92,7 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 	for _, field := range req.Fields {
 		propSchema := &jsonschema.Schema{
 			Description: field.Description,
+			Title:       field.Label,
 		}
 
 		switch field.Type {
@@ -97,17 +104,26 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 			propSchema.Type = "number"
 		case TypeBool:
 			propSchema.Type = "boolean"
-		case TypeTimestamp:
+		case TypeDateTime:
 			propSchema.Type = "string"
 			propSchema.Format = "date-time"
+		case TypeTime:
+			propSchema.Type = "string"
+			propSchema.Format = "time"
+		case TypeDate:
+			propSchema.Type = "string"
+			propSchema.Format = "date"
+		case TypeDuration:
+			propSchema.Type = "string"
+			propSchema.Format = "go-duration" // it is not easy to use ISO 8601 durations in go
 		default:
 			return nil, fmt.Errorf("unsupported field type: %s", field.Type)
 		}
 
-		properties[field.KeyName] = propSchema
+		properties[field.Key] = propSchema
 
 		if field.Required {
-			requiredFields = append(requiredFields, field.KeyName)
+			requiredFields = append(requiredFields, field.Key)
 		}
 	}
 
@@ -125,50 +141,61 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
-// Validate schema request doesn't contain duplicate key names
-func (s *SchemaRequest) Validate() error {
-	keys := make(map[string]struct{}, len(s.Fields))
-	for _, field := range s.Fields {
-		if _, exists := keys[field.KeyName]; exists {
-			return ErrDuplicateField
-		}
-	}
-	return nil
-}
-
 func NewSchemaRequest(name, description string) *SchemaRequest {
 	return &SchemaRequest{
 		Name:        name,
 		Description: description,
+		Fields:      make([]FieldDefinition, 0),
 	}
 }
 
-// Add field to schema
-func (s *SchemaRequest) WithField(name, descripton string, typ SupportedType, required bool) *SchemaRequest {
-	s.Fields = append(s.Fields, SchemaKey{
-		KeyName:     name,
-		Description: descripton,
+// Add field to schema and record the first error encountered
+func (s *SchemaRequest) WithField(name, description string, typ SupportedType, required bool) *SchemaRequest {
+	if s.err != nil {
+		return s // Short-circuit if an error already occurred earlier in the chain
+	}
+
+	key := Slugify(name)
+	if key == "" {
+		s.err = fmt.Errorf("field name '%s' produced an empty key", name)
+		return s
+	}
+
+	if !Valid(typ) {
+		s.err = fmt.Errorf("invalid type '%s' for name '%s'", typ, name)
+		return s
+	}
+
+	for _, existing := range s.Fields {
+		if existing.Key == key {
+			s.err = fmt.Errorf("duplicate field key '%s' (from name '%s')", key, name)
+			return s
+		}
+	}
+
+	s.Fields = append(s.Fields, FieldDefinition{
+		Key:         key,
+		Label:       name,
+		Description: description,
 		Type:        typ,
 		Required:    required,
 	})
 	return s
 }
 
-// Create creates a new tally definition ready for SQLite insertion.
-func (req *SchemaRequest) Create() (*TallySchema, error) {
+// Build creates a new tally definition ready for SQLite insertion.
+func (req *SchemaRequest) Build() (*TallySchema, error) {
 
-	if req == nil || req.Fields == nil {
+	if req == nil {
 		return nil, fmt.Errorf("failed to create tally: %w", ErrInvalidRequest)
 	}
-
-	err := req.Validate()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create tally: %w", err)
+	if err := req.err; err != nil {
+		return nil, err
 	}
 
 	schemaObj, err := BuildJSONSchema(*req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build a new json shcema: %w", err)
+		return nil, fmt.Errorf("failed to build a new json schema: %w", err)
 	}
 
 	// Serialize the schema struct to a JSON string for SQLite storage
@@ -207,6 +234,11 @@ func ValidateEntry(rawSchemaJSON string, payload string) error {
 	// Validate incoming map against the schema
 	if err := resolved.Validate(pld); err != nil {
 		return fmt.Errorf("entry validation failed: %w", err)
+	}
+
+	// Validate against custom validation rules
+	if err := runValidationRules(sch, pld); err != nil {
+		return fmt.Errorf("custom validation failed: %w", err)
 	}
 
 	return nil
