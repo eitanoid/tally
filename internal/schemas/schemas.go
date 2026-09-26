@@ -113,11 +113,13 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 
 	// Construct the root object schema
 	schema := &jsonschema.Schema{
-		Type:                 "object",
-		Description:          req.Description,
-		Properties:           properties,
-		Required:             requiredFields,
-		AdditionalProperties: &jsonschema.Schema{}, // Rejects unregistered dynamic fields
+		Type:        "object",
+		Description: req.Description,
+		Properties:  properties,
+		Required:    requiredFields,
+		AdditionalProperties: &jsonschema.Schema{
+			Not: &jsonschema.Schema{},
+		}, // Rejects unregistered dynamic fields
 	}
 
 	return schema, nil
@@ -203,7 +205,7 @@ func ValidateEntry(rawSchemaJSON string, payload string) error {
 	}
 
 	// Validate incoming map against the schema
-	if err := resolved.Validate(payload); err != nil {
+	if err := resolved.Validate(pld); err != nil {
 		return fmt.Errorf("entry validation failed: %w", err)
 	}
 
