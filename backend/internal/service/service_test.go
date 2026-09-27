@@ -47,7 +47,7 @@ func TestCreateSchema(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			svc, _ := setupTestService(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			req := tt.buildFn()
 			got, err := svc.CreateSchema(ctx, req)
@@ -94,7 +94,7 @@ func TestGetLatestSchema(t *testing.T) {
 		},
 		{
 			name: "non-existent tally_id error",
-			seedFn: func(ctx context.Context, svc *service.TallyService) (string, int) {
+			seedFn: func(_ context.Context, svc *service.TallyService) (string, int) {
 				return "00000000-0000-0000-0000-000000000000", 0
 			},
 			wantErrIs: sql.ErrNoRows,
@@ -104,7 +104,7 @@ func TestGetLatestSchema(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			svc, _ := setupTestService(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			tallyID, expectedVersion := tt.seedFn(ctx, svc)
 
@@ -164,7 +164,7 @@ func TestRecordEntry(t *testing.T) {
 		},
 		{
 			name: "failed when tally schema does not exist",
-			seedFn: func(ctx context.Context, svc *service.TallyService) string {
+			seedFn: func(_ context.Context, svc *service.TallyService) string {
 				return "missing-tally-id"
 			},
 			rawData: `{"reps": 12}`,
@@ -175,7 +175,7 @@ func TestRecordEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			svc, _ := setupTestService(t)
-			ctx := context.Background()
+			ctx := t.Context()
 
 			tallyID := tt.seedFn(ctx, svc)
 
