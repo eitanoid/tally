@@ -1,3 +1,4 @@
+// Package bridge provides foreign function interface (FFI) bindings for mobile and external callers.
 package bridge
 
 import (
@@ -8,11 +9,13 @@ import (
 	"github.com/eitanoid/tally/internal/service"
 )
 
+// Bridge acts as a simplified entry point for external callers.
 type Bridge struct {
 	service *service.TallyService
 	ctx     context.Context
 }
 
+// New creates a new bridge client.
 func New(dbPath string) (*Bridge, error) {
 	sqlClient, err := repository.NewSQLiteClient(dbPath)
 	if err != nil {
@@ -26,7 +29,8 @@ func New(dbPath string) (*Bridge, error) {
 }
 
 // ListEntries returns (JSON response string, error).
-func (b *Bridge) ListEntries(tallyId string, limit, offset int32) (string, error) {
+func (b *Bridge) ListEntries(tallyID string, limit, offset int32) (string, error) {
+	_, _, _ = tallyID, limit, offset
 	if b.service == nil {
 		return "", fmt.Errorf("service not initialized")
 	}
@@ -37,6 +41,7 @@ func (b *Bridge) ListEntries(tallyId string, limit, offset int32) (string, error
 
 // CreateSchema accepts a JSON payload and returns (JSON response string, error).
 func (b *Bridge) CreateSchema(schemaRequest string) (string, error) {
+	_ = schemaRequest
 	if b.service == nil {
 		return "", fmt.Errorf("service not initialized")
 	}
