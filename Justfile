@@ -2,7 +2,7 @@ build:
     CGO=0 go build -C backend -o=../tally
 
 test:
-    go test ./...
+    cd backend && go test ./...
 
 lint:
     cd backend && golangci-lint run 
