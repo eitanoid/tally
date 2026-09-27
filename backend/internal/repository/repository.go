@@ -1,3 +1,4 @@
+// Package repository defines the data persistence interfaces and filters for tally domains.
 package repository
 
 import (
@@ -7,13 +8,14 @@ import (
 	"github.com/eitanoid/tally/internal/schemas"
 )
 
-// Pagination filter for Entries
+// EntryFilter contains the pagination filter for Entry queries.
 type EntryFilter struct {
 	TallyID string
 	Limit   int
 	Offset  int
 }
 
+// Repository contains the signatures for all database operations.
 type Repository interface {
 	// Schema Operations
 	InsertSchema(ctx context.Context, schema *schemas.TallySchema) error

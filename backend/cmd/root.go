@@ -1,3 +1,4 @@
+// Package cmd provides CLI command definitions and execution logic.
 package cmd
 
 import (
@@ -11,7 +12,7 @@ import (
 
 var (
 	dbPath       string
-	repo         *repository.SqliteClient
+	repo         *repository.SQLiteClient
 	tallyService *service.TallyService
 )
 
