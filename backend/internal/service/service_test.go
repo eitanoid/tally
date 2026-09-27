@@ -94,7 +94,7 @@ func TestGetLatestSchema(t *testing.T) {
 		},
 		{
 			name: "non-existent tally_id error",
-			seedFn: func(_ context.Context, svc *service.TallyService) (string, int) {
+			seedFn: func(_ context.Context, _ *service.TallyService) (string, int) {
 				return "00000000-0000-0000-0000-000000000000", 0
 			},
 			wantErrIs: sql.ErrNoRows,
@@ -164,7 +164,7 @@ func TestRecordEntry(t *testing.T) {
 		},
 		{
 			name: "failed when tally schema does not exist",
-			seedFn: func(_ context.Context, svc *service.TallyService) string {
+			seedFn: func(_ context.Context, _ *service.TallyService) string {
 				return "missing-tally-id"
 			},
 			rawData: `{"reps": 12}`,
