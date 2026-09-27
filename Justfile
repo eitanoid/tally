@@ -9,4 +9,4 @@ lint:
     # buf lint
 
 bind:
-    CGO_ENABLED=1 gomobile bind -target=android -androidapi 21 -o tally.aar ./pkg/bridge
+    cd backend && CGO_ENABLED=1 gomobile bind -target=android -androidapi 21 -o tally.aar ./pkg/bridge
