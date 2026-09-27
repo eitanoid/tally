@@ -20,8 +20,8 @@ import (
 // SupportedType represents all supported field formats for the caller (e.g. string, date-time, integer).
 type SupportedType string
 
+// Supported user defined types and formats for entries.
 const (
-	//
 	typeString   SupportedType = "string"
 	typeInt      SupportedType = "integer"
 	typeFloat    SupportedType = "number"
@@ -32,7 +32,7 @@ const (
 	typeDuration SupportedType = "duration"
 )
 
-// Supported primitive types for JSON objects.
+// Supported primitive types for JSON schema objects.
 const (
 	jsonString  = "string"
 	jsonInteger = "integer"
@@ -40,7 +40,7 @@ const (
 	jsonBoolean = "boolean"
 )
 
-// Supported standard and custom formats for JSON fields.
+// Supported standard and custom formats for JSON schema fields.
 const (
 	jsonFormatDateTime = "date-time"
 	jsonFormatTime     = "time"
