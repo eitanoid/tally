@@ -1,3 +1,4 @@
+// Package entries defines domain models and constructor logic for user tally entries.
 package entries
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
+// TallyEntry represents a single recorded data point tied to a specific TallySchema version.
 type TallyEntry struct {
 	ID            string    `db:"id" json:"id"`
 	TallyID       string    `db:"tally_id" json:"tally_id"`
@@ -17,8 +19,8 @@ type TallyEntry struct {
 	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
 }
 
+// CreateTallyEntry creates a TallyEntry against a TallySchema and validates the data.
 func CreateTallyEntry(schema schemas.TallySchema, data string) (TallyEntry, error) {
-
 	// validate against schema
 	if err := schemas.ValidateEntry(schema.JSONSchemaRaw, data); err != nil {
 		return TallyEntry{}, fmt.Errorf("failed to validate entry data: %w", err)
@@ -31,6 +33,7 @@ func CreateTallyEntry(schema schemas.TallySchema, data string) (TallyEntry, erro
 	}, nil
 }
 
+// SchemaRef returns the unique SchemaRef for the TallyEntry.
 func (e *TallyEntry) SchemaRef() schemas.SchemaRef {
 	return schemas.SchemaRef{
 		TallyID: e.TallyID,

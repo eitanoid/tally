@@ -1,3 +1,4 @@
+// Package schemas provides domain types, JSON Schema generation, and validation logic.
 package schemas
 
 import (
