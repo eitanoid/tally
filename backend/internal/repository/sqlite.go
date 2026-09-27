@@ -44,7 +44,14 @@ func (c *SQLiteClient) Close() error {
 
 // Open initializes the SQLite database connection, applies Pragmas, and executes embedded migrations.
 func open(dbPath string) (*sql.DB, error) {
-	dsn := fmt.Sprintf("file:%s?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=ON", dbPath)
+	var dsn string
+	if dbPath == ":memory:" {
+		// Use shared in-memory mode URI
+		dsn = "file::memory:?mode=memory&cache=shared&_foreign_keys=ON"
+	} else {
+		// Standard file-based database
+		dsn = fmt.Sprintf("file:%s?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=ON", dbPath)
+	}
 
 	database, err := sql.Open("sqlite3", dsn)
 	if err != nil {
