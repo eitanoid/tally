@@ -22,14 +22,22 @@ type SupportedType string
 
 // Supported user defined types and formats for entries.
 const (
-	typeString   SupportedType = "string"
-	typeInt      SupportedType = "integer"
-	typeFloat    SupportedType = "number"
-	typeBool     SupportedType = "boolean"
-	typeDateTime SupportedType = "date-time"
-	typeDate     SupportedType = "date"
-	typeTime     SupportedType = "time"
-	typeDuration SupportedType = "duration"
+	// TypeString represents an intent to store a String in a schema field.
+	TypeString SupportedType = "string"
+	// TypeInt represents an intent to store an Int in a schema field.
+	TypeInt SupportedType = "integer"
+	// TypeFloat represents an intent to store a Float in a schema field.
+	TypeFloat SupportedType = "number"
+	// TypeBool represents an intent to store a Bool in a schema field.
+	TypeBool SupportedType = "boolean"
+	// TypeDateTime represents an intent to store a DateTime in a schema field.
+	TypeDateTime SupportedType = "date-time"
+	// TypeDate represents an intent to store a Date in a schema field.
+	TypeDate SupportedType = "date"
+	// TypeTime represents an intent to store a Time in a schema field.
+	TypeTime SupportedType = "time"
+	// TypeDuration represents an intent to store a Duration in a schema field.
+	TypeDuration SupportedType = "duration"
 )
 
 // Supported primitive types for JSON schema objects.
@@ -59,7 +67,7 @@ var (
 // Valid validates a SupportedType
 func Valid(t SupportedType) bool {
 	switch t {
-	case typeString, typeInt, typeFloat, typeBool, typeDateTime, typeDate, typeTime, typeDuration:
+	case TypeString, TypeInt, TypeFloat, TypeBool, TypeDateTime, TypeDate, TypeTime, TypeDuration:
 		return true
 	default:
 		return false
@@ -119,24 +127,24 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 		}
 
 		switch field.Type {
-		case typeString:
+		case TypeString:
 			propSchema.Type = jsonString
-		case typeInt:
+		case TypeInt:
 			propSchema.Type = jsonInteger
-		case typeFloat:
+		case TypeFloat:
 			propSchema.Type = jsonNumber
-		case typeBool:
+		case TypeBool:
 			propSchema.Type = jsonBoolean
-		case typeDateTime:
+		case TypeDateTime:
 			propSchema.Type = jsonString
 			propSchema.Format = jsonFormatDateTime
-		case typeTime:
+		case TypeTime:
 			propSchema.Type = jsonString
 			propSchema.Format = jsonFormatTime
-		case typeDate:
+		case TypeDate:
 			propSchema.Type = jsonString
 			propSchema.Format = jsonFormatDate
-		case typeDuration:
+		case TypeDuration:
 			propSchema.Type = jsonString
 			propSchema.Format = jsonFormatDuration
 		default:
