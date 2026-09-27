@@ -8,3 +8,6 @@ linters:
     - unused
     - revive
     - goconst
+  settings:
+    goconst:
+      ignore-tests: true
