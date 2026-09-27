@@ -6,7 +6,10 @@ test:
 
 lint:
     cd backend && golangci-lint run 
-    # buf lint
+    buf lint
+
+generate:
+    buf generate && cd backend && go mod tidy
 
 bind:
     cd backend && CGO_ENABLED=1 gomobile bind -target=android -androidapi 21 -o tally.aar ./pkg/bridge

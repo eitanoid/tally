@@ -4,8 +4,8 @@ package tally.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "backend/pkg/pb/tallyv1";
-option java_multiple_files = true; // Generates clean individual Java classes
+option go_package = "backend/generated/pb/tallyv1";
+option java_multiple_files = true;
 option java_package = "com.eitanoid.tally.pb";
 
 // Centralized response status codes across all Cgo operations
@@ -62,7 +62,7 @@ message LogEntryRequest {
 message LogEntryResponse {
   string entry_id = 1;
   ResponseCode code = 2;
-  string error_message = 3; // Populated if backend ValidateEntry() fails
+  string error_message = 3;
 }
 
 message SchemaRequestField {
