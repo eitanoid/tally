@@ -52,14 +52,14 @@ message Entry {
   google.protobuf.Timestamp updated_at = 6;
 }
 
-message LogEntryRequest {
+message RecordEntryRequest {
   string tally_id = 1;
   int32 schema_version = 2;
   // Pre-validated JSON payload string (e.g., '{"book_title":"Dune","page_count":412}')
   string payload_json = 3;
 }
 
-message LogEntryResponse {
+message RecordEntryResponse {
   string entry_id = 1;
   ResponseCode code = 2;
   string error_message = 3;
@@ -91,6 +91,14 @@ message GetLatestSchemaRequest {
 
 message GetLatestSchemaResponse {
   Schema schema = 1;
+  ResponseCode code = 2;
+  string error_message = 3;
+}
+
+message ListSchemasRequest {}
+
+message ListSchemasResponse {
+  repeated Schema schemas = 1;
   ResponseCode code = 2;
   string error_message = 3;
 }

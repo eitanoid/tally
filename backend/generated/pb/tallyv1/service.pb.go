@@ -362,7 +362,7 @@ func (x *Entry) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-type LogEntryRequest struct {
+type RecordEntryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TallyId       string                 `protobuf:"bytes,1,opt,name=tally_id,json=tallyId,proto3" json:"tally_id,omitempty"`
 	SchemaVersion int32                  `protobuf:"varint,2,opt,name=schema_version,json=schemaVersion,proto3" json:"schema_version,omitempty"`
@@ -372,20 +372,20 @@ type LogEntryRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LogEntryRequest) Reset() {
-	*x = LogEntryRequest{}
+func (x *RecordEntryRequest) Reset() {
+	*x = RecordEntryRequest{}
 	mi := &file_tally_v1_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LogEntryRequest) String() string {
+func (x *RecordEntryRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LogEntryRequest) ProtoMessage() {}
+func (*RecordEntryRequest) ProtoMessage() {}
 
-func (x *LogEntryRequest) ProtoReflect() protoreflect.Message {
+func (x *RecordEntryRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_tally_v1_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -397,33 +397,33 @@ func (x *LogEntryRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LogEntryRequest.ProtoReflect.Descriptor instead.
-func (*LogEntryRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RecordEntryRequest.ProtoReflect.Descriptor instead.
+func (*RecordEntryRequest) Descriptor() ([]byte, []int) {
 	return file_tally_v1_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *LogEntryRequest) GetTallyId() string {
+func (x *RecordEntryRequest) GetTallyId() string {
 	if x != nil {
 		return x.TallyId
 	}
 	return ""
 }
 
-func (x *LogEntryRequest) GetSchemaVersion() int32 {
+func (x *RecordEntryRequest) GetSchemaVersion() int32 {
 	if x != nil {
 		return x.SchemaVersion
 	}
 	return 0
 }
 
-func (x *LogEntryRequest) GetPayloadJson() string {
+func (x *RecordEntryRequest) GetPayloadJson() string {
 	if x != nil {
 		return x.PayloadJson
 	}
 	return ""
 }
 
-type LogEntryResponse struct {
+type RecordEntryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EntryId       string                 `protobuf:"bytes,1,opt,name=entry_id,json=entryId,proto3" json:"entry_id,omitempty"`
 	Code          ResponseCode           `protobuf:"varint,2,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
@@ -432,20 +432,20 @@ type LogEntryResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LogEntryResponse) Reset() {
-	*x = LogEntryResponse{}
+func (x *RecordEntryResponse) Reset() {
+	*x = RecordEntryResponse{}
 	mi := &file_tally_v1_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LogEntryResponse) String() string {
+func (x *RecordEntryResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LogEntryResponse) ProtoMessage() {}
+func (*RecordEntryResponse) ProtoMessage() {}
 
-func (x *LogEntryResponse) ProtoReflect() protoreflect.Message {
+func (x *RecordEntryResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_tally_v1_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -457,26 +457,26 @@ func (x *LogEntryResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LogEntryResponse.ProtoReflect.Descriptor instead.
-func (*LogEntryResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RecordEntryResponse.ProtoReflect.Descriptor instead.
+func (*RecordEntryResponse) Descriptor() ([]byte, []int) {
 	return file_tally_v1_service_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *LogEntryResponse) GetEntryId() string {
+func (x *RecordEntryResponse) GetEntryId() string {
 	if x != nil {
 		return x.EntryId
 	}
 	return ""
 }
 
-func (x *LogEntryResponse) GetCode() ResponseCode {
+func (x *RecordEntryResponse) GetCode() ResponseCode {
 	if x != nil {
 		return x.Code
 	}
 	return ResponseCode_RESPONSE_CODE_UNSPECIFIED
 }
 
-func (x *LogEntryResponse) GetErrorMessage() string {
+func (x *RecordEntryResponse) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -783,6 +783,102 @@ func (x *GetLatestSchemaResponse) GetErrorMessage() string {
 	return ""
 }
 
+type ListSchemasRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSchemasRequest) Reset() {
+	*x = ListSchemasRequest{}
+	mi := &file_tally_v1_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSchemasRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSchemasRequest) ProtoMessage() {}
+
+func (x *ListSchemasRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSchemasRequest.ProtoReflect.Descriptor instead.
+func (*ListSchemasRequest) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{9}
+}
+
+type ListSchemasResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Schemas       []*Schema              `protobuf:"bytes,1,rep,name=schemas,proto3" json:"schemas,omitempty"`
+	Code          ResponseCode           `protobuf:"varint,2,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSchemasResponse) Reset() {
+	*x = ListSchemasResponse{}
+	mi := &file_tally_v1_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSchemasResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSchemasResponse) ProtoMessage() {}
+
+func (x *ListSchemasResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSchemasResponse.ProtoReflect.Descriptor instead.
+func (*ListSchemasResponse) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ListSchemasResponse) GetSchemas() []*Schema {
+	if x != nil {
+		return x.Schemas
+	}
+	return nil
+}
+
+func (x *ListSchemasResponse) GetCode() ResponseCode {
+	if x != nil {
+		return x.Code
+	}
+	return ResponseCode_RESPONSE_CODE_UNSPECIFIED
+}
+
+func (x *ListSchemasResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 type ListEntriesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TallyId       string                 `protobuf:"bytes,1,opt,name=tally_id,json=tallyId,proto3" json:"tally_id,omitempty"`
@@ -794,7 +890,7 @@ type ListEntriesRequest struct {
 
 func (x *ListEntriesRequest) Reset() {
 	*x = ListEntriesRequest{}
-	mi := &file_tally_v1_service_proto_msgTypes[9]
+	mi := &file_tally_v1_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -806,7 +902,7 @@ func (x *ListEntriesRequest) String() string {
 func (*ListEntriesRequest) ProtoMessage() {}
 
 func (x *ListEntriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tally_v1_service_proto_msgTypes[9]
+	mi := &file_tally_v1_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +915,7 @@ func (x *ListEntriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEntriesRequest.ProtoReflect.Descriptor instead.
 func (*ListEntriesRequest) Descriptor() ([]byte, []int) {
-	return file_tally_v1_service_proto_rawDescGZIP(), []int{9}
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListEntriesRequest) GetTallyId() string {
@@ -858,7 +954,7 @@ type ListEntriesResponse struct {
 
 func (x *ListEntriesResponse) Reset() {
 	*x = ListEntriesResponse{}
-	mi := &file_tally_v1_service_proto_msgTypes[10]
+	mi := &file_tally_v1_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -870,7 +966,7 @@ func (x *ListEntriesResponse) String() string {
 func (*ListEntriesResponse) ProtoMessage() {}
 
 func (x *ListEntriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tally_v1_service_proto_msgTypes[10]
+	mi := &file_tally_v1_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -883,7 +979,7 @@ func (x *ListEntriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEntriesResponse.ProtoReflect.Descriptor instead.
 func (*ListEntriesResponse) Descriptor() ([]byte, []int) {
-	return file_tally_v1_service_proto_rawDescGZIP(), []int{10}
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListEntriesResponse) GetEntries() []*Entry {
@@ -957,12 +1053,12 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"v\n" +
-	"\x0fLogEntryRequest\x12\x19\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"y\n" +
+	"\x12RecordEntryRequest\x12\x19\n" +
 	"\btally_id\x18\x01 \x01(\tR\atallyId\x12%\n" +
 	"\x0eschema_version\x18\x02 \x01(\x05R\rschemaVersion\x12!\n" +
-	"\fpayload_json\x18\x03 \x01(\tR\vpayloadJson\"~\n" +
-	"\x10LogEntryResponse\x12\x19\n" +
+	"\fpayload_json\x18\x03 \x01(\tR\vpayloadJson\"\x81\x01\n" +
+	"\x13RecordEntryResponse\x12\x19\n" +
 	"\bentry_id\x18\x01 \x01(\tR\aentryId\x12*\n" +
 	"\x04code\x18\x02 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x91\x01\n" +
@@ -984,6 +1080,11 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\btally_id\x18\x01 \x01(\tR\atallyId\"\x94\x01\n" +
 	"\x17GetLatestSchemaResponse\x12(\n" +
 	"\x06schema\x18\x01 \x01(\v2\x10.tally.v1.SchemaR\x06schema\x12*\n" +
+	"\x04code\x18\x02 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x14\n" +
+	"\x12ListSchemasRequest\"\x92\x01\n" +
+	"\x13ListSchemasResponse\x12*\n" +
+	"\aschemas\x18\x01 \x03(\v2\x10.tally.v1.SchemaR\aschemas\x12*\n" +
 	"\x04code\x18\x02 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"]\n" +
 	"\x12ListEntriesRequest\x12\x19\n" +
@@ -1035,41 +1136,45 @@ func file_tally_v1_service_proto_rawDescGZIP() []byte {
 }
 
 var file_tally_v1_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_tally_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_tally_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_tally_v1_service_proto_goTypes = []any{
 	(ResponseCode)(0),               // 0: tally.v1.ResponseCode
 	(FieldFormat)(0),                // 1: tally.v1.FieldFormat
 	(Error)(0),                      // 2: tally.v1.Error
 	(*Schema)(nil),                  // 3: tally.v1.Schema
 	(*Entry)(nil),                   // 4: tally.v1.Entry
-	(*LogEntryRequest)(nil),         // 5: tally.v1.LogEntryRequest
-	(*LogEntryResponse)(nil),        // 6: tally.v1.LogEntryResponse
+	(*RecordEntryRequest)(nil),      // 5: tally.v1.RecordEntryRequest
+	(*RecordEntryResponse)(nil),     // 6: tally.v1.RecordEntryResponse
 	(*SchemaRequestField)(nil),      // 7: tally.v1.SchemaRequestField
 	(*CreateSchemaRequest)(nil),     // 8: tally.v1.CreateSchemaRequest
 	(*CreateSchemaResponse)(nil),    // 9: tally.v1.CreateSchemaResponse
 	(*GetLatestSchemaRequest)(nil),  // 10: tally.v1.GetLatestSchemaRequest
 	(*GetLatestSchemaResponse)(nil), // 11: tally.v1.GetLatestSchemaResponse
-	(*ListEntriesRequest)(nil),      // 12: tally.v1.ListEntriesRequest
-	(*ListEntriesResponse)(nil),     // 13: tally.v1.ListEntriesResponse
-	(*timestamppb.Timestamp)(nil),   // 14: google.protobuf.Timestamp
+	(*ListSchemasRequest)(nil),      // 12: tally.v1.ListSchemasRequest
+	(*ListSchemasResponse)(nil),     // 13: tally.v1.ListSchemasResponse
+	(*ListEntriesRequest)(nil),      // 14: tally.v1.ListEntriesRequest
+	(*ListEntriesResponse)(nil),     // 15: tally.v1.ListEntriesResponse
+	(*timestamppb.Timestamp)(nil),   // 16: google.protobuf.Timestamp
 }
 var file_tally_v1_service_proto_depIdxs = []int32{
-	14, // 0: tally.v1.Schema.created_at:type_name -> google.protobuf.Timestamp
-	14, // 1: tally.v1.Entry.created_at:type_name -> google.protobuf.Timestamp
-	14, // 2: tally.v1.Entry.updated_at:type_name -> google.protobuf.Timestamp
-	0,  // 3: tally.v1.LogEntryResponse.code:type_name -> tally.v1.ResponseCode
+	16, // 0: tally.v1.Schema.created_at:type_name -> google.protobuf.Timestamp
+	16, // 1: tally.v1.Entry.created_at:type_name -> google.protobuf.Timestamp
+	16, // 2: tally.v1.Entry.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 3: tally.v1.RecordEntryResponse.code:type_name -> tally.v1.ResponseCode
 	1,  // 4: tally.v1.SchemaRequestField.type:type_name -> tally.v1.FieldFormat
 	7,  // 5: tally.v1.CreateSchemaRequest.fields:type_name -> tally.v1.SchemaRequestField
 	0,  // 6: tally.v1.CreateSchemaResponse.code:type_name -> tally.v1.ResponseCode
 	3,  // 7: tally.v1.GetLatestSchemaResponse.schema:type_name -> tally.v1.Schema
 	0,  // 8: tally.v1.GetLatestSchemaResponse.code:type_name -> tally.v1.ResponseCode
-	4,  // 9: tally.v1.ListEntriesResponse.entries:type_name -> tally.v1.Entry
-	0,  // 10: tally.v1.ListEntriesResponse.code:type_name -> tally.v1.ResponseCode
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	3,  // 9: tally.v1.ListSchemasResponse.schemas:type_name -> tally.v1.Schema
+	0,  // 10: tally.v1.ListSchemasResponse.code:type_name -> tally.v1.ResponseCode
+	4,  // 11: tally.v1.ListEntriesResponse.entries:type_name -> tally.v1.Entry
+	0,  // 12: tally.v1.ListEntriesResponse.code:type_name -> tally.v1.ResponseCode
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_tally_v1_service_proto_init() }
@@ -1083,7 +1188,7 @@ func file_tally_v1_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tally_v1_service_proto_rawDesc), len(file_tally_v1_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
