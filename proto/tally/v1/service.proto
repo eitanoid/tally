@@ -4,7 +4,7 @@ package tally.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "backend/generated/pb/tallyv1";
+option go_package = "pb/tallyv1";
 option java_multiple_files = true;
 option java_package = "com.eitanoid.tally.pb";
 
