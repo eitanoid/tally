@@ -1018,8 +1018,9 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\x11FIELD_FORMAT_TIME\x10\a\x12\x19\n" +
 	"\x15FIELD_FORMAT_DURATION\x10\b*\x1e\n" +
 	"\x05Error\x12\x15\n" +
-	"\x11ERROR_UNSPECIFIED\x10\x00B{\n" +
-	"\fcom.tally.v1B\fServiceProtoP\x01Z\x1cbackend/generated/pb/tallyv1\xa2\x02\x03TXX\xaa\x02\bTally.V1\xca\x02\bTally\\V1\xe2\x02\x14Tally\\V1\\GPBMetadata\xea\x02\tTally::V1b\x06proto3"
+	"\x11ERROR_UNSPECIFIED\x10\x00Bi\n" +
+	"\fcom.tally.v1B\fServiceProtoP\x01Z\n" +
+	"pb/tallyv1\xa2\x02\x03TXX\xaa\x02\bTally.V1\xca\x02\bTally\\V1\xe2\x02\x14Tally\\V1\\GPBMetadata\xea\x02\tTally::V1b\x06proto3"
 
 var (
 	file_tally_v1_service_proto_rawDescOnce sync.Once
