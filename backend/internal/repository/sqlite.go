@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,29 +12,33 @@ import (
 	"github.com/eitanoid/tally/internal/entries"
 	"github.com/eitanoid/tally/internal/schemas"
 
+	// Register the SQLite driver for database/sql
 	_ "github.com/ncruces/go-sqlite3/driver"
 )
 
-type SqliteClient struct {
+// SQLiteClient implements the repository interface.
+type SQLiteClient struct {
 	db *sql.DB
 }
 
-var _ Repository = (*SqliteClient)(nil)
+var _ Repository = (*SQLiteClient)(nil)
 
 //go:embed migrations/*.sql
 var migrationFS embed.FS
 
-func NewSQLiteClient(dbPath string) (*SqliteClient, error) {
+// NewSQLiteClient initialises a new SQLite connection.
+func NewSQLiteClient(dbPath string) (*SQLiteClient, error) {
 	db, err := open(dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SQLite database: %w", err)
 	}
-	return &SqliteClient{
+	return &SQLiteClient{
 		db: db,
 	}, nil
 }
 
-func (c *SqliteClient) Close() error {
+// Close closes the database connection.
+func (c *SQLiteClient) Close() error {
 	return c.db.Close()
 }
 
@@ -78,9 +83,11 @@ func runMigrations(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// --
-
-func (c *SqliteClient) InsertSchema(ctx context.Context, schema *schemas.TallySchema) error {
+// InsertSchema inserts a validated schema into the database.
+func (c *SQLiteClient) InsertSchema(ctx context.Context, schema *schemas.TallySchema) error {
+	if schema == nil {
+		return errors.New("schema cannot be nil")
+	}
 	query := `
 		INSERT INTO tally_schemas (tally_id, version, name, description, json_schema)
 		VALUES (?, ?, ?, ?, ?)
@@ -95,12 +102,13 @@ func (c *SqliteClient) InsertSchema(ctx context.Context, schema *schemas.TallySc
 	).Scan(&schema.CreatedAt)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert tally schema: %w", err)
+		return fmt.Errorf("failed to insert tally schema (%s v%d): %w", schema.TallyID, schema.Version, err)
 	}
 	return nil
 }
 
-func (c *SqliteClient) GetLatestSchemaByID(ctx context.Context, tallyID string) (*schemas.TallySchema, error) {
+// GetLatestSchemaByID returns the latest version of a schema corresponding to a tallyID.
+func (c *SQLiteClient) GetLatestSchemaByID(ctx context.Context, tallyID string) (*schemas.TallySchema, error) {
 	query := `
 		SELECT tally_id, version, name, description, json_schema, created_at
 		FROM tally_schemas
@@ -118,7 +126,7 @@ func (c *SqliteClient) GetLatestSchemaByID(ctx context.Context, tallyID string) 
 		&s.CreatedAt,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("schema not found for tally_id %s: %w", tallyID, err)
 		}
 		return nil, fmt.Errorf("failed to query latest schema: %w", err)
@@ -126,7 +134,8 @@ func (c *SqliteClient) GetLatestSchemaByID(ctx context.Context, tallyID string) 
 	return &s, nil
 }
 
-func (c *SqliteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef) (*schemas.TallySchema, error) {
+// GetSchemaByRef returns the TallySchema corresponding to a provided TallyID and a SchemaVersion.
+func (c *SQLiteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef) (*schemas.TallySchema, error) {
 	query := `
 		SELECT tally_id, version, name, description, json_schema, created_at
 		FROM tally_schemas
@@ -142,7 +151,7 @@ func (c *SqliteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef
 		&s.CreatedAt,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("schema not found for ref (%s v%d): %w", ref.TallyID, ref.Version, err)
 		}
 		return nil, fmt.Errorf("failed to query schema by ref: %w", err)
@@ -150,7 +159,8 @@ func (c *SqliteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef
 	return &s, nil
 }
 
-func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.TallySchema, error) {
+// GetAllLatestSchemas returns the latest version of all registered TallySchemas from the database.
+func (c *SQLiteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.TallySchema, error) {
 	query := `
 		SELECT tally_id, version, name, description, json_schema, created_at
 		FROM tally_schemas
@@ -165,9 +175,11 @@ func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.Tally
 	if err != nil {
 		return nil, fmt.Errorf("failed to query all latest schemas: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
-	var result []schemas.TallySchema
+	result := make([]schemas.TallySchema, 0)
 	for rows.Next() {
 		var s schemas.TallySchema
 		if err := rows.Scan(&s.TallyID, &s.Version, &s.Name, &s.Description, &s.JSONSchemaRaw, &s.CreatedAt); err != nil {
@@ -175,6 +187,11 @@ func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.Tally
 		}
 		result = append(result, s)
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over schema rows: %w", err)
+	}
+
 	return result, nil
 }
 
@@ -182,7 +199,11 @@ func (c *SqliteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.Tally
 // Entry Operations
 // -----------------------------------------------------------------------------
 
-func (c *SqliteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntry) error {
+// InsertEntry inserts an already validated TallyEntry into the database.
+func (c *SQLiteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntry) error {
+	if entry == nil {
+		return errors.New("cannot insert nil tally entry")
+	}
 	query := `
 		INSERT INTO tally_entries (id, tally_id, schema_version, data)
 		VALUES (?, ?, ?, ?)
@@ -202,8 +223,7 @@ func (c *SqliteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntr
 }
 
 // GetEntriesByTallyID retrieves a paginated slice of entries alongside the total entry count.
-func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error) {
-
+func (c *SQLiteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error) {
 	var totalCount int
 	countQuery := `SELECT COUNT(*) FROM tally_entries WHERE tally_id = ?`
 	if err := c.db.QueryRowContext(ctx, countQuery, filter.TallyID).Scan(&totalCount); err != nil {
@@ -217,6 +237,9 @@ func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilt
 	if filter.Limit > 200 {
 		filter.Limit = 200
 	}
+	if filter.Offset < 0 {
+		filter.Offset = 0
+	}
 
 	query := `
 		SELECT id, tally_id, schema_version, data, created_at, updated_at
@@ -229,9 +252,11 @@ func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilt
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to query entries for tally %s: %w", filter.TallyID, err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
-	var result []entries.TallyEntry
+	result := make([]entries.TallyEntry, 0, filter.Limit)
 	for rows.Next() {
 		var e entries.TallyEntry
 		if err := rows.Scan(&e.ID, &e.TallyID, &e.SchemaVersion, &e.Data, &e.CreatedAt, &e.UpdatedAt); err != nil {
@@ -239,5 +264,10 @@ func (c *SqliteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilt
 		}
 		result = append(result, e)
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("error iterating over entry rows: %w", err)
+	}
+
 	return result, totalCount, nil
 }

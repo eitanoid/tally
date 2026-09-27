@@ -22,8 +22,8 @@ var schemaCmd = &cobra.Command{
 var schemaListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all active tally schemas",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		list, err := TallyService.ListSchemas(cmd.Context())
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		list, err := tallyService.ListSchemas(cmd.Context())
 		if err != nil {
 			return err
 		}
@@ -35,9 +35,9 @@ var schemaListCmd = &cobra.Command{
 
 		var buf bytes.Buffer
 		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-		fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT")
+		_, _ = fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT")
 		for _, s := range list {
-			fmt.Fprintf(
+			_, _ = fmt.Fprintf(
 				w, "%s\tv%d\t%s\t%s\n", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339),
 			)
 		}
@@ -62,15 +62,15 @@ var schemaGetCmd = &cobra.Command{
 		} else {
 			return errors.New("expected tally id. got nothing")
 		}
-		s, err := TallyService.GetLatestSchema(cmd.Context(), tallyID)
+		s, err := tallyService.GetLatestSchema(cmd.Context(), tallyID)
 		if err != nil {
 			return err
 		}
 
 		var buf bytes.Buffer
 		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-		fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA")
-		fmt.Fprintf(w, "%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw)
+		_, _ = fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA")
+		_, _ = fmt.Fprintf(w, "%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw)
 		if err := w.Flush(); err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ var schemaCreateCmd = &cobra.Command{
 	Use:     "create",
 	Short:   "Create a new tally schema",
 	Example: `  tally schema create -n "Reading" -m "Tracking reading habits" -f "book:Name of the book:string:true" -f "pages:number of pages read:integer:true"`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		req := schemas.NewSchemaRequest(schemaName, schemaDesc)
 		for _, field := range schemaFields {
 			name, desc, typ, required, err := processField(field)
@@ -102,7 +102,7 @@ var schemaCreateCmd = &cobra.Command{
 			req.WithField(name, desc, schemas.SupportedType(typ), required)
 		}
 
-		s, err := TallyService.CreateSchema(cmd.Context(), req)
+		s, err := tallyService.CreateSchema(cmd.Context(), req)
 		if err != nil {
 			return err
 		}

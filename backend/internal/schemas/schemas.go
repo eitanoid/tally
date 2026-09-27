@@ -1,3 +1,4 @@
+// Package schemas provides domain types, JSON Schema generation, and validation logic.
 package schemas
 
 import (
@@ -16,28 +17,49 @@ import (
 // default fields like `added` might be worth making an uncommon name like `__added__` and interpreting that later since `added` could be a common name for a field
 // add logged at to db entry instead of schema
 
+// SupportedType represents all supported field formats for the caller (e.g. string, date-time, integer).
 type SupportedType string
 
 const (
-	// would be nice to add units in the future to int and float
-	TypeString   SupportedType = "string"
-	TypeInt      SupportedType = "integer"
-	TypeFloat    SupportedType = "number"
-	TypeBool     SupportedType = "boolean"
-	TypeDateTime SupportedType = "date-time"
-	TypeDate     SupportedType = "date"
-	TypeTime     SupportedType = "time"
-	TypeDuration SupportedType = "duration"
+	//
+	typeString   SupportedType = "string"
+	typeInt      SupportedType = "integer"
+	typeFloat    SupportedType = "number"
+	typeBool     SupportedType = "boolean"
+	typeDateTime SupportedType = "date-time"
+	typeDate     SupportedType = "date"
+	typeTime     SupportedType = "time"
+	typeDuration SupportedType = "duration"
+)
+
+// Supported primitive types for JSON objects.
+const (
+	jsonString  = "string"
+	jsonInteger = "integer"
+	jsonNumber  = "number"
+	jsonBoolean = "boolean"
+)
+
+// Supported standard and custom formats for JSON fields.
+const (
+	jsonFormatDateTime = "date-time"
+	jsonFormatTime     = "time"
+	jsonFormatDate     = "date"
+	// Custom format for Go duration strings (e.g. "2h3m").
+	jsonFormatDuration = "go-duration"
 )
 
 var (
+	// ErrDuplicateField is raised when a field name is duplicated.
 	ErrDuplicateField = errors.New("field name must be unique")
+	// ErrInvalidRequest is raised when a SchemaRequest is not valid
 	ErrInvalidRequest = errors.New("request not valid")
 )
 
+// Valid validates a SupportedType
 func Valid(t SupportedType) bool {
 	switch t {
-	case TypeString, TypeInt, TypeFloat, TypeBool, TypeDateTime, TypeDate, TypeTime, TypeDuration:
+	case typeString, typeInt, typeFloat, typeBool, typeDateTime, typeDate, typeTime, typeDuration:
 		return true
 	default:
 		return false
@@ -77,6 +99,7 @@ type SchemaRef struct {
 	Version int    `json:"version"`
 }
 
+// Ref returns the unique identifier for a schema.
 func (h *TallySchema) Ref() SchemaRef {
 	return SchemaRef{
 		TallyID: h.TallyID,
@@ -96,26 +119,26 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 		}
 
 		switch field.Type {
-		case TypeString:
-			propSchema.Type = "string"
-		case TypeInt:
-			propSchema.Type = "integer"
-		case TypeFloat:
-			propSchema.Type = "number"
-		case TypeBool:
-			propSchema.Type = "boolean"
-		case TypeDateTime:
-			propSchema.Type = "string"
-			propSchema.Format = "date-time"
-		case TypeTime:
-			propSchema.Type = "string"
-			propSchema.Format = "time"
-		case TypeDate:
-			propSchema.Type = "string"
-			propSchema.Format = "date"
-		case TypeDuration:
-			propSchema.Type = "string"
-			propSchema.Format = "go-duration" // it is not easy to use ISO 8601 durations in go
+		case typeString:
+			propSchema.Type = jsonString
+		case typeInt:
+			propSchema.Type = jsonInteger
+		case typeFloat:
+			propSchema.Type = jsonNumber
+		case typeBool:
+			propSchema.Type = jsonBoolean
+		case typeDateTime:
+			propSchema.Type = jsonString
+			propSchema.Format = jsonFormatDateTime
+		case typeTime:
+			propSchema.Type = jsonString
+			propSchema.Format = jsonFormatTime
+		case typeDate:
+			propSchema.Type = jsonString
+			propSchema.Format = jsonFormatDate
+		case typeDuration:
+			propSchema.Type = jsonString
+			propSchema.Format = jsonFormatDuration
 		default:
 			return nil, fmt.Errorf("unsupported field type: %s", field.Type)
 		}
@@ -141,6 +164,7 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 	return schema, nil
 }
 
+// NewSchemaRequest creates a new SchemaRequest object.
 func NewSchemaRequest(name, description string) *SchemaRequest {
 	return &SchemaRequest{
 		Name:        name,
@@ -149,7 +173,7 @@ func NewSchemaRequest(name, description string) *SchemaRequest {
 	}
 }
 
-// Add field to schema and record the first error encountered
+// WithField adds a field to a SchemaRequest and records the first error encountered.
 func (s *SchemaRequest) WithField(name, description string, typ SupportedType, required bool) *SchemaRequest {
 	if s.err != nil {
 		return s // Short-circuit if an error already occurred earlier in the chain
@@ -184,16 +208,16 @@ func (s *SchemaRequest) WithField(name, description string, typ SupportedType, r
 }
 
 // Build creates a new tally definition ready for SQLite insertion.
-func (req *SchemaRequest) Build() (*TallySchema, error) {
+func (s *SchemaRequest) Build() (*TallySchema, error) {
 
-	if req == nil {
+	if s == nil {
 		return nil, fmt.Errorf("failed to create tally: %w", ErrInvalidRequest)
 	}
-	if err := req.err; err != nil {
+	if err := s.err; err != nil {
 		return nil, err
 	}
 
-	schemaObj, err := BuildJSONSchema(*req)
+	schemaObj, err := BuildJSONSchema(*s)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build a new json schema: %w", err)
 	}
@@ -205,10 +229,10 @@ func (req *SchemaRequest) Build() (*TallySchema, error) {
 	}
 
 	return &TallySchema{
-		Name:          req.Name,
+		Name:          s.Name,
 		Version:       1,
 		TallyID:       ksuid.New().String(),
-		Description:   req.Description,
+		Description:   s.Description,
 		JSONSchemaRaw: string(rawJSON),
 	}, nil
 }

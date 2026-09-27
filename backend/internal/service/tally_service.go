@@ -1,3 +1,4 @@
+// Package service implements application business logic for tallies, schemas, and entries.
 package service
 
 import (
@@ -9,16 +10,19 @@ import (
 	"github.com/eitanoid/tally/internal/schemas"
 )
 
+// TallyService provides business logic for managing tallies, schemas, and entries.
 type TallyService struct {
 	repo repository.Repository
 }
 
+// NewTallyService creates a new TallyService
 func NewTallyService(repo repository.Repository) *TallyService {
 	return &TallyService{
 		repo: repo,
 	}
 }
 
+// PaginatedResult represents a pagination collection of tally entries.
 type PaginatedResult struct {
 	Entries    []entries.TallyEntry `json:"entries"`
 	TotalCount int                  `json:"total_count"`

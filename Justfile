@@ -5,7 +5,7 @@ test:
     go test ./...
 
 lint:
-    golangci-lint run --working-dir backend ./...
+    cd backend && golangci-lint run 
     # buf lint
 
 bind:
