@@ -12,29 +12,30 @@ import (
 var (
 	dbPath       string
 	repo         *repository.SqliteClient
-	TallyService *service.TallyService
+	tallyService *service.TallyService
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "tally",
 	Short: "Modular, versioned tally tracking CLI",
 	Long:  `A local-first, offline tally tracker backed by SQLite and versioned JSON schemas.`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		var err error
 		repo, err = repository.NewSQLiteClient(dbPath)
 		if err != nil {
 			return fmt.Errorf("failed to open sqlite database at %s: %s", dbPath, err.Error())
 		}
-		TallyService = service.NewTallyService(repo)
+		tallyService = service.NewTallyService(repo)
 		return nil
 	},
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+	PersistentPostRun: func(_ *cobra.Command, _ []string) {
 		if repo != nil {
 			_ = repo.Close()
 		}
 	},
 }
 
+// Execute executes the cobra root cmd
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

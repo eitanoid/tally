@@ -25,8 +25,8 @@ var entryLogCmd = &cobra.Command{
 	Use:     "log",
 	Short:   "Log a new entry against a tally schema",
 	Example: `  tally entry log -t <TALLY_ID> -d '{"book": "The Stranger", "pages": 20}'`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		entry, err := TallyService.RecordEntry(cmd.Context(), entryTallyID, entryData)
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		entry, err := tallyService.RecordEntry(cmd.Context(), entryTallyID, entryData)
 		if err != nil {
 			return fmt.Errorf("failed to log entry: %w", err)
 		}
@@ -40,8 +40,8 @@ var entryLogCmd = &cobra.Command{
 var entryListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List entries logged for a tally",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		paginatedResults, err := TallyService.ListEntries(cmd.Context(), entryTallyID, entryLimit, 0)
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		paginatedResults, err := tallyService.ListEntries(cmd.Context(), entryTallyID, entryLimit, 0)
 		if err != nil {
 			return err
 		}
@@ -54,9 +54,9 @@ var entryListCmd = &cobra.Command{
 
 		var buf bytes.Buffer
 		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-		fmt.Fprintln(w, "ENTRY ID\tVERSION\tCREATED AT\tDATA")
+		_, _ = fmt.Fprintln(w, "ENTRY ID\tVERSION\tCREATED AT\tDATA")
 		for _, e := range list {
-			fmt.Fprintf(w, "%s\tv%d\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\tv%d\t%s\t%s\n",
 				e.ID, e.SchemaVersion, e.CreatedAt.Format(time.RFC3339), e.Data)
 		}
 		if err := w.Flush(); err != nil {
