@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package tally.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "backend/pkg/pb/tallyv1";
+option java_multiple_files = true; // Generates clean individual Java classes
+option java_package = "com.eitanoid.tally.pb";
+
+// Centralized response status codes across all Cgo operations
+enum ResponseCode {
+  RESPONSE_CODE_UNSPECIFIED = 0;
+  RESPONSE_CODE_OK = 1;
+  RESPONSE_CODE_INVALID_PAYLOAD = 2;
+  RESPONSE_CODE_NOT_FOUND = 3;
+  RESPONSE_CODE_DUPLICATE_FIELD = 4;
+  RESPONSE_CODE_SCHEMA_VALIDATION_FAILED = 5;
+  RESPONSE_CODE_INTERNAL_ERROR = 6;
+}
+enum FieldFormat {
+  FIELD_FORMAT_UNSPECIFIED = 0;
+  FIELD_FORMAT_STRING = 1;
+  FIELD_FORMAT_INTEGER = 2;
+  FIELD_FORMAT_NUMBER = 3;
+  FIELD_FORMAT_BOOLEAN = 4;
+  FIELD_FORMAT_DATE_TIME = 5;
+  FIELD_FORMAT_DATE = 6;
+  FIELD_FORMAT_TIME = 7;
+  FIELD_FORMAT_DURATION = 8;
+}
+
+enum Error {
+  ERROR_UNSPECIFIED = 0;
+}
+
+message Schema {
+  string tally_id = 1;
+  int32 schema_version = 2;
+  string name = 3;
+  string description = 4;
+  string json_schema = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message Entry {
+  string entry_id = 1;
+  string tally_id = 2;
+  int32 schema_version = 3;
+  string data = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message LogEntryRequest {
+  string tally_id = 1;
+  int32 schema_version = 2;
+  // Pre-validated JSON payload string (e.g., '{"book_title":"Dune","page_count":412}')
+  string payload_json = 3;
+}
+
+message LogEntryResponse {
+  string entry_id = 1;
+  ResponseCode code = 2;
+  string error_message = 3; // Populated if backend ValidateEntry() fails
+}
+
+message SchemaRequestField {
+  string name = 1;
+  string description = 2;
+  FieldFormat type = 3;
+  bool required = 4;
+}
+
+message CreateSchemaRequest {
+  string name = 1;
+  string description = 2;
+  repeated SchemaRequestField fields = 3;
+}
+
+message CreateSchemaResponse {
+  string tally_id = 1;
+  int32 schema_version = 2;
+  ResponseCode code = 3;
+  string error_message = 4;
+}
+
+message GetLatestSchemaRequest {
+  string tally_id = 1;
+}
+
+message GetLatestSchemaResponse {
+  Schema schema = 1;
+  ResponseCode code = 2;
+  string error_message = 3;
+}
+
+message ListEntriesRequest {
+  string tally_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListEntriesResponse {
+  repeated Entry entries = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+  int32 total_count = 4;
+  bool has_more = 5;
+  ResponseCode code = 6;
+  string error_message = 7;
+}
