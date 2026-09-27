@@ -11,3 +11,6 @@ linters:
   settings:
     goconst:
       ignore-tests: true
+  exclusions:
+    paths:
+      - generated
