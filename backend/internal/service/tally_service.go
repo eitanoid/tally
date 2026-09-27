@@ -1,3 +1,4 @@
+// Package service implements application business logic for tallies, schemas, and entries.
 package service
 
 import (
