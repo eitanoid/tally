@@ -7,6 +7,7 @@ require (
 	github.com/ncruces/go-sqlite3 v0.35.6
 	github.com/segmentio/ksuid v1.0.4
 	github.com/spf13/cobra v1.10.2
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
