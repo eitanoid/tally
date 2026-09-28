@@ -7,6 +7,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/eitanoid/tally/internal/entries"
 	"github.com/eitanoid/tally/internal/repository"
 	"github.com/eitanoid/tally/internal/schemas"
 	"github.com/eitanoid/tally/internal/service"
@@ -264,6 +265,129 @@ func TestListEntries(t *testing.T) {
 				if res.HasMore != tt.wantHasMore {
 					t.Errorf("ListEntries().HasMore = %v, want %v", res.HasMore, tt.wantHasMore)
 				}
+			}
+		})
+	}
+}
+
+func TestTallyService_UpdateEntry(t *testing.T) {
+	tallyUUID := "550e8400-e29b-41d4-a716-446655440000"
+	validSchemaJSON := `{"type":"object","properties":{"count":{"type":"integer"}}}`
+
+	tests := []struct {
+		name       string
+		entryID    string
+		patchData  string
+		seedSchema *schemas.TallySchema
+		seedEntry  *entries.TallyEntry
+		wantErrIs  error
+		wantData   string
+	}{
+		{
+			name:      "successful merge patch update",
+			entryID:   "entry-1",
+			patchData: `{"count": 10}`,
+			seedSchema: &schemas.TallySchema{
+				TallyID:       tallyUUID,
+				Version:       1,
+				Name:          "Counter",
+				JSONSchemaRaw: validSchemaJSON,
+			},
+			seedEntry: &entries.TallyEntry{
+				ID:            "entry-1",
+				TallyID:       tallyUUID,
+				SchemaVersion: 1,
+				Data:          `{"count": 5}`,
+			},
+			wantErrIs: nil,
+			wantData:  `{"count":10}`,
+		},
+		{
+			name:       "returns ErrNotFound when entry does not exist",
+			entryID:    "non-existent-entry",
+			patchData:  `{"count": 10}`,
+			seedSchema: nil,
+			seedEntry:  nil,
+			wantErrIs:  entries.ErrNotFound,
+		},
+		{
+			name:      "returns ErrInvalidPatch on malformed JSON payload",
+			entryID:   "entry-1",
+			patchData: `invalid-json-payload`,
+			seedSchema: &schemas.TallySchema{
+				TallyID:       tallyUUID,
+				Version:       1,
+				Name:          "Counter",
+				JSONSchemaRaw: validSchemaJSON,
+			},
+			seedEntry: &entries.TallyEntry{
+				ID:            "entry-1",
+				TallyID:       tallyUUID,
+				SchemaVersion: 1,
+				Data:          `{"count": 5}`,
+			},
+			wantErrIs: entries.ErrInvalidPatch,
+		},
+		{
+			name:      "returns ErrInvalidData when merge patch violates JSON schema",
+			entryID:   "entry-1",
+			patchData: `{"count": "not-an-integer"}`,
+			seedSchema: &schemas.TallySchema{
+				TallyID:       tallyUUID,
+				Version:       1,
+				Name:          "Counter",
+				JSONSchemaRaw: validSchemaJSON,
+			},
+			seedEntry: &entries.TallyEntry{
+				ID:            "entry-1",
+				TallyID:       tallyUUID,
+				SchemaVersion: 1,
+				Data:          `{"count": 5}`,
+			},
+			wantErrIs: entries.ErrInvalidData,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, repo := setupTestService(t)
+			ctx := context.Background()
+
+			if tt.seedSchema != nil {
+				if err := repo.InsertSchema(ctx, tt.seedSchema); err != nil {
+					t.Fatalf("failed to seed schema: %v", err)
+				}
+			}
+
+			if tt.seedEntry != nil {
+				if err := repo.InsertEntry(ctx, tt.seedEntry); err != nil {
+					t.Fatalf("failed to seed entry: %v", err)
+				}
+			}
+
+			updated, err := svc.UpdateEntry(ctx, tt.entryID, tt.patchData)
+
+			if tt.wantErrIs != nil {
+				if !errors.Is(err, tt.wantErrIs) {
+					t.Fatalf("UpdateEntry() error = %v, wantErrIs %v", err, tt.wantErrIs)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if updated.Data != tt.wantData {
+				t.Errorf("UpdateEntry() returned Data = %s, want %s", updated.Data, tt.wantData)
+			}
+
+			persisted, err := repo.GetEntryByID(ctx, tt.entryID)
+			if err != nil {
+				t.Fatalf("failed to fetch persisted entry: %v", err)
+			}
+			if persisted.Data != tt.wantData {
+				t.Errorf("DB persisted Data = %s, want %s", persisted.Data, tt.wantData)
 			}
 		})
 	}

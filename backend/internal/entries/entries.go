@@ -2,7 +2,6 @@
 package entries
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -31,7 +30,7 @@ type TallyEntry struct {
 // CreateTallyEntry creates a TallyEntry against a TallySchema and validates the data.
 func CreateTallyEntry(schema schemas.TallySchema, data string) (TallyEntry, error) {
 	// validate against schema
-	if err := schemas.ValidateEntry(schema.JSONSchemaRaw, data); err != nil {
+	if err := schemas.ValidateJSONData(schema.JSONSchemaRaw, data); err != nil {
 		return TallyEntry{}, fmt.Errorf("failed to validate entry data: %w", err)
 	}
 	return TallyEntry{
@@ -50,31 +49,30 @@ func (e *TallyEntry) SchemaRef() schemas.SchemaRef {
 	}
 }
 
-// UpdateEntry acepts a JSON patch for an existing Entry with a schema.
-func UpdateEntry(existingEntry *TallyEntry, rawPatchData []byte, schemaJSON []byte) (*TallyEntry, error) {
-	if err := schemas.ValidatePatch(rawPatchData, schemaJSON); err != nil {
-		return nil, fmt.Errorf("invalid patch data: %w", err)
+// UpdateEntry accepts a JSON patch for an existing Entry with a schema.
+func UpdateEntry(existingEntry *TallyEntry, jsonPatchData []byte, jsonSchema []byte) (*TallyEntry, error) {
+	if existingEntry == nil {
+		return nil, ErrNotFound
 	}
 
-	originalJSON, err := json.Marshal(existingEntry)
+	// validate Patch is a valid JSON
+	if err := schemas.ValidatePatch(jsonPatchData); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidPatch, err)
+	}
+
+	// apply merge-patch
+	patchedJSON, err := jsonpatch.MergePatch([]byte(existingEntry.Data), jsonPatchData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal original entry: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrInvalidPatch, err)
 	}
 
-	patchedJSON, err := jsonpatch.MergePatch(originalJSON, rawPatchData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to apply merge patch: %w", err)
+	// validate merged object satisfies the schema
+	if err := schemas.ValidateJSONData(string(jsonSchema), string(patchedJSON)); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidData, err)
 	}
 
-	// ensure patched data still complies to the schema
-	if err := schemas.ValidateEntry(string(patchedJSON), string(schemaJSON)); err != nil {
-		return nil, fmt.Errorf("patched object violates full schema: %w", err)
-	}
-
-	var updatedEntry TallyEntry
-	if err := json.Unmarshal(patchedJSON, &updatedEntry); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal patched entry: %w", err)
-	}
+	updatedEntry := *existingEntry
+	updatedEntry.Data = string(patchedJSON)
 
 	return &updatedEntry, nil
 }

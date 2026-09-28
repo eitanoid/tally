@@ -245,15 +245,15 @@ func (s *SchemaRequest) Build() (*TallySchema, error) {
 	}, nil
 }
 
-// ValidateEntry checks if an incoming dynamic payload matches a stored tally schema.
-func ValidateEntry(rawSchemaJSON string, payload string) error {
+// ValidateJSONData checks if an incoming dynamic payload matches a stored tally schema.
+func ValidateJSONData(jsonSchema string, payload string) error {
 	var pld map[string]any
 	if err := json.Unmarshal([]byte(payload), &pld); err != nil {
 		return fmt.Errorf("invalid payload: %w", err)
 	}
 
 	var sch jsonschema.Schema
-	if err := json.Unmarshal([]byte(rawSchemaJSON), &sch); err != nil {
+	if err := json.Unmarshal([]byte(jsonSchema), &sch); err != nil {
 		return fmt.Errorf("invalid stored schema: %w", err)
 	}
 
@@ -276,19 +276,17 @@ func ValidateEntry(rawSchemaJSON string, payload string) error {
 	return nil
 }
 
-func ValidatePatch(rawSchemaJSON []byte, patchJSON []byte) error {
-	var schemaMap map[string]any
-	if err := json.Unmarshal([]byte(rawSchemaJSON), &schemaMap); err != nil {
-		return fmt.Errorf("failed to unmarshal schema: %w", err)
+// ValidatePatch ensures the patch payload itself is valid JSON.
+func ValidatePatch(jsonPatch []byte) error {
+	var pld any
+	if err := json.Unmarshal(jsonPatch, &pld); err != nil {
+		return fmt.Errorf("invalid patch JSON payload: %w", err)
 	}
 
-	// delete "required" field to allow partial entries
-	delete(schemaMap, "required")
-
-	modifiedSchemaJSON, err := json.Marshal(schemaMap)
-	if err != nil {
-		return fmt.Errorf("failed to re-marshal modified schema: %w", err)
+	// JSON Merge Patch (RFC 7396) root must be a JSON object
+	if _, ok := pld.(map[string]any); !ok {
+		return fmt.Errorf("patch payload must be a JSON object")
 	}
 
-	return ValidateEntry(string(modifiedSchemaJSON), string(patchJSON))
+	return nil
 }

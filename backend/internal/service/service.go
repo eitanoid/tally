@@ -99,3 +99,25 @@ func (s *TallyService) ListEntries(ctx context.Context, tallyID string, limit in
 		HasMore:    hasMore,
 	}, nil
 }
+
+// UpdateEntry updates the data for an entry with a JSON patch.
+func (s *TallyService) UpdateEntry(ctx context.Context, entryID string, patchData string) (*entries.TallyEntry, error) {
+	entry, err := s.repo.GetEntryByID(ctx, entryID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch entry: %w", err)
+	}
+
+	schema, err := s.repo.GetSchemaByRef(ctx, entry.SchemaRef())
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch schema for entry %s: %w", entryID, err)
+	}
+
+	updatedEntry, err := entries.UpdateEntry(entry, []byte(patchData), []byte(schema.JSONSchemaRaw))
+	if err != nil {
+		return nil, fmt.Errorf("failed to update entry %s: %w", entryID, err)
+	}
+	if err := s.repo.UpdateEntryData(ctx, updatedEntry); err != nil {
+		return nil, fmt.Errorf("failed to persist updated entry %s in the database: %w", entryID, err)
+	}
+	return updatedEntry, nil
+}

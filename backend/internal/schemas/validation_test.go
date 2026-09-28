@@ -241,7 +241,7 @@ func TestValidateEntry_Integration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateEntry(schemaJSON, tt.payload)
+			err := ValidateJSONData(schemaJSON, tt.payload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateEntry() error = %v, wantErr %v", err, tt.wantErr)
 			}
