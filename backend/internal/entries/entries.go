@@ -3,12 +3,19 @@ package entries
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/eitanoid/tally/internal/schemas"
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/segmentio/ksuid"
+)
+
+var (
+	ErrNotFound     = errors.New("entry not found")
+	ErrInvalidData  = errors.New("data does not comply with schema")
+	ErrInvalidPatch = errors.New("invalid patch")
 )
 
 // TallyEntry represents a single recorded data point tied to a specific TallySchema version.
