@@ -275,3 +275,20 @@ func ValidateEntry(rawSchemaJSON string, payload string) error {
 
 	return nil
 }
+
+func ValidatePatch(rawSchemaJSON []byte, patchJSON []byte) error {
+	var schemaMap map[string]any
+	if err := json.Unmarshal([]byte(rawSchemaJSON), &schemaMap); err != nil {
+		return fmt.Errorf("failed to unmarshal schema: %w", err)
+	}
+
+	// delete "required" field to allow partial entries
+	delete(schemaMap, "required")
+
+	modifiedSchemaJSON, err := json.Marshal(schemaMap)
+	if err != nil {
+		return fmt.Errorf("failed to re-marshal modified schema: %w", err)
+	}
+
+	return ValidateEntry(string(modifiedSchemaJSON), string(patchJSON))
+}

@@ -2,10 +2,12 @@
 package entries
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/eitanoid/tally/internal/schemas"
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/segmentio/ksuid"
 )
 
@@ -39,4 +41,33 @@ func (e *TallyEntry) SchemaRef() schemas.SchemaRef {
 		TallyID: e.TallyID,
 		Version: e.SchemaVersion,
 	}
+}
+
+// UpdateEntry acepts a JSON patch for an existing Entry with a schema.
+func UpdateEntry(existingEntry *TallyEntry, rawPatchData []byte, schemaJSON []byte) (*TallyEntry, error) {
+	if err := schemas.ValidatePatch(rawPatchData, schemaJSON); err != nil {
+		return nil, fmt.Errorf("invalid patch data: %w", err)
+	}
+
+	originalJSON, err := json.Marshal(existingEntry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal original entry: %w", err)
+	}
+
+	patchedJSON, err := jsonpatch.MergePatch(originalJSON, rawPatchData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply merge patch: %w", err)
+	}
+
+	// ensure patched data still complies to the schema
+	if err := schemas.ValidateEntry(string(patchedJSON), string(schemaJSON)); err != nil {
+		return nil, fmt.Errorf("patched object violates full schema: %w", err)
+	}
+
+	var updatedEntry TallyEntry
+	if err := json.Unmarshal(patchedJSON, &updatedEntry); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal patched entry: %w", err)
+	}
+
+	return &updatedEntry, nil
 }
