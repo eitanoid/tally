@@ -45,7 +45,7 @@ var entryPatchCmd = &cobra.Command{
 			return fmt.Errorf("failed to log entry: %w", err)
 		}
 
-		fmt.Printf("Logged entry %s for tally '%s' (v%d) at %s\n",
+		fmt.Printf("Patched entry %s for tally '%s' (v%d) at %s\n",
 			entry.ID, entry.TallyID, entry.SchemaVersion, entry.CreatedAt.Format("2006-01-02 15:04:05"))
 		return nil
 	},
@@ -66,12 +66,18 @@ var entryListCmd = &cobra.Command{
 			return nil
 		}
 
-		headers := "ENTRY ID\tVERSION\tCREATED AT\tDATA"
+		headers := "ENTRY ID\tVERSION\tCREATED AT\tUPDATED_AT\tDATA"
 		return PrintTable(cmd.OutOrStdout(), headers, list, func(e entries.TallyEntry) string {
-			return fmt.Sprintf("%s\tv%d\t%s\t%s",
+			updatedAtString := "-"
+			if !e.UpdatedAt.Equal(e.CreatedAt) {
+				updatedAtString = e.UpdatedAt.Format(time.RFC3339)
+			}
+
+			return fmt.Sprintf("%s\tv%d\t%s\t%s\t%s",
 				e.ID,
 				e.SchemaVersion,
 				e.CreatedAt.Format(time.RFC3339),
+				updatedAtString,
 				e.Data,
 			)
 		})

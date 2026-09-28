@@ -37,9 +37,9 @@ $ tally entry add -t 3JyNWHK6JYV1TE5ufVpssbYxFe8 -d "{\"book\":\"The Stranger\",
 > Logged entry 3JyNe04LnhADzOT2Y1SspRXGmHh for tally '3JyNWHK6JYV1TE5ufVpssbYxFe8' (v1) at 2026-09-28 21:03:59
 
 $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
-> ENTRY ID                      VERSION   CREATED AT             DATA
-> -------------------------------------------------------------------
-> 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
+> ENTRY ID                      VERSION   CREATED AT             UPDATED_AT             DATA
+> ------------------------------------------------------------------------------------------
+> 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   -                      {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
 
 $ tally entry add -t 3JyNWHK6JYV1TE5ufVpssbYxFe8 -d "{\"book\":\"The Fall\", \"pages\": 23, \"time\":\"$(date -Iseconds)\"}"
 > Logged entry 3JyNicKBXFY9ZMW3wQc5BcpaE3Q for tally '3JyNWHK6JYV1TE5ufVpssbYxFe8' (v1) at 2026-09-28 21:04:35
@@ -51,10 +51,10 @@ $ tally entry patch -t 3JyNicKBXFY9ZMW3wQc5BcpaE3Q -d "{\"pages\": 45}"
 > Patched entry 3JyNicKBXFY9ZMW3wQc5BcpaE3Q for tally '3JyNWHK6JYV1TE5ufVpssbYxFe8' (v1) at 2026-09-28 21:04:35
 
 $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
-> ENTRY ID                      VERSION   CREATED AT             DATA
-> -------------------------------------------------------------------
-> 3JyNicKBXFY9ZMW3wQc5BcpaE3Q   v1        2026-09-28T21:04:35Z   {"book":"The Fall","pages":45,"time":"2026-09-28T22:04:35+01:00"}
-> 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
+> ENTRY ID                      VERSION   CREATED AT             UPDATED_AT             DATA
+> ------------------------------------------------------------------------------------------
+> 3JyNicKBXFY9ZMW3wQc5BcpaE3Q   v1        2026-09-28T21:04:35Z   2026-09-28T21:06:09Z   {"book":"The Fall","pages":45,"time":"2026-09-28T22:04:35+01:00"}
+> 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   -                      {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
 ```
 
 Generic habit tracking app for Android (in the future)
