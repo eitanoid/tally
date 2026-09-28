@@ -166,7 +166,7 @@ func (c *SQLiteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef
 	return &s, nil
 }
 
-// GetEntryById returns the Entry corrsponding to the provided ID.
+// GetEntryByID returns the Entry corrsponding to the provided ID.
 func (c *SQLiteClient) GetEntryByID(ctx context.Context, entryID string) (*entries.TallyEntry, error) {
 	query := `
 		SELECT id, tally_id, schema_version, data, created_at, updated_at

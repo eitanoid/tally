@@ -104,7 +104,7 @@ func (b *Bridge) CreateSchema(requestBytes []byte) []byte {
 			return marshalProtoError(
 				setCreateSchemaErr,
 				tallyv1.ResponseCode_RESPONSE_CODE_INVALID_PAYLOAD,
-				fmt.Errorf("Invalid type %s for field %s", field.GetName(), field.GetType()),
+				fmt.Errorf("invalid type %s for field %s", field.GetName(), field.GetType()),
 			)
 
 		}

@@ -12,8 +12,11 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("entry not found")
-	ErrInvalidData  = errors.New("data does not comply with schema")
+	// ErrNotFound returns when an entry wasn't found.
+	ErrNotFound = errors.New("entry not found")
+	// ErrInvalidData returns when a patch data produces an invalid entry.
+	ErrInvalidData = errors.New("data does not comply with schema")
+	// ErrInvalidPatch returns when a patch is not a valid JSON merge-patch.
 	ErrInvalidPatch = errors.New("invalid patch")
 )
 
