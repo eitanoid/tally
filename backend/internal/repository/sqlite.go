@@ -166,6 +166,60 @@ func (c *SQLiteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef
 	return &s, nil
 }
 
+// GetEntryById returns the Entry corrsponding to the provided ID.
+func (c *SQLiteClient) GetEntryByID(ctx context.Context, entryID string) (*entries.TallyEntry, error) {
+	query := `
+		SELECT id, tally_id, schema_version, data, created_at, updated_at
+		FROM tally_entries
+		WHERE id = ?
+		LIMIT 1;`
+	var e entries.TallyEntry
+	err := c.db.QueryRowContext(ctx, query, entryID).Scan(
+		&e.ID,
+		&e.TallyID,
+		&e.SchemaVersion,
+		&e.Data,
+		&e.CreatedAt,
+		&e.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: %s", entries.ErrNotFound, entryID)
+		}
+		return nil, fmt.Errorf("failed to get entry by ID: %w", err)
+	}
+	return &e, nil
+}
+
+// UpdateEntryData sets validated data from an updated entry into the entry database entry.
+func (c *SQLiteClient) UpdateEntryData(ctx context.Context, entry *entries.TallyEntry) error {
+	query := `
+		UPDATE tally_entries
+		SET data = ?, updated_at = ?
+		WHERE id = ?;
+	`
+	now := time.Now().UTC()
+	updatedAtStr := now.Format(time.RFC3339Nano)
+
+	res, err := c.db.ExecContext(ctx, query, entry.Data, updatedAtStr, entry.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update entry %s: %w", entry.ID, err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected for entry %s: %w", entry.ID, err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("%w: %s", entries.ErrNotFound, entry.ID)
+	}
+
+	// Update the struct's timestamp to match what was stored in the DB
+	entry.UpdatedAt = now
+
+	return nil
+}
+
 // GetAllLatestSchemas returns the latest version of all registered TallySchemas from the database.
 func (c *SQLiteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.TallySchema, error) {
 	query := `

@@ -26,4 +26,6 @@ type Repository interface {
 	// Entry Operations
 	InsertEntry(ctx context.Context, entry *entries.TallyEntry) error
 	GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error)
+	GetEntryByID(ctx context.Context, entryID string) (*entries.TallyEntry, error)
+	UpdateEntryData(ctx context.Context, entry *entries.TallyEntry) error
 }

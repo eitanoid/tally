@@ -364,3 +364,158 @@ func TestGetEntriesByTallyID(t *testing.T) {
 		})
 	}
 }
+
+func TestGetEntryByID(t *testing.T) {
+	tallyUUID := "550e8400-e29b-41d4-a716-446655440000"
+
+	tests := []struct {
+		name        string
+		seedEntries []*entries.TallyEntry
+		queryID     string
+		wantID      string
+		wantErrIs   error
+	}{
+		{
+			name: "fetches existing entry by ID",
+			seedEntries: []*entries.TallyEntry{
+				{ID: "entry-101", TallyID: tallyUUID, SchemaVersion: 1, Data: `{"count":1}`},
+				{ID: "entry-102", TallyID: tallyUUID, SchemaVersion: 1, Data: `{"count":2}`},
+			},
+			queryID:   "entry-101",
+			wantID:    "entry-101",
+			wantErrIs: nil,
+		},
+		{
+			name:        "non-existent entry returns ErrNotFound",
+			seedEntries: nil,
+			queryID:     "missing-entry-id",
+			wantID:      "",
+			wantErrIs:   entries.ErrNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := setupTestDB(t)
+			ctx := context.Background()
+
+			if err := client.InsertSchema(ctx, &schemas.TallySchema{
+				TallyID:       tallyUUID,
+				Version:       1,
+				Name:          "Test Tally",
+				JSONSchemaRaw: `{}`,
+			}); err != nil {
+				t.Fatalf("failed to seed schema: %v", err)
+			}
+
+			for _, e := range tt.seedEntries {
+				if err := client.InsertEntry(ctx, e); err != nil {
+					t.Fatalf("failed to seed entry: %v", err)
+				}
+			}
+
+			got, err := client.GetEntryByID(ctx, tt.queryID)
+			if tt.wantErrIs != nil {
+				if !errors.Is(err, tt.wantErrIs) {
+					t.Fatalf("GetEntryByID() error = %v, wantErrIs %v", err, tt.wantErrIs)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got.ID != tt.wantID {
+				t.Errorf("GetEntryByID().ID = %s, want %s", got.ID, tt.wantID)
+			}
+		})
+	}
+}
+
+func TestUpdateEntryData(t *testing.T) {
+	tallyUUID := "550e8400-e29b-41d4-a716-446655440000"
+
+	tests := []struct {
+		name        string
+		seedEntry   *entries.TallyEntry
+		updateEntry *entries.TallyEntry
+		wantData    string
+		wantErrIs   error
+	}{
+		{
+			name: "successfully updates existing entry data",
+			seedEntry: &entries.TallyEntry{
+				ID:            "entry-to-update",
+				TallyID:       tallyUUID,
+				SchemaVersion: 1,
+				Data:          `{"status":"pending"}`,
+			},
+			updateEntry: &entries.TallyEntry{
+				ID:            "entry-to-update",
+				TallyID:       tallyUUID,
+				SchemaVersion: 1,
+				Data:          `{"status":"completed"}`,
+			},
+			wantData:  `{"status":"completed"}`,
+			wantErrIs: nil,
+		},
+		{
+			name:      "updating non-existent entry returns ErrNotFound",
+			seedEntry: nil,
+			updateEntry: &entries.TallyEntry{
+				ID:            "non-existent-entry",
+				TallyID:       tallyUUID,
+				SchemaVersion: 1,
+				Data:          `{"status":"failed"}`,
+			},
+			wantData:  "",
+			wantErrIs: entries.ErrNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := setupTestDB(t)
+			ctx := context.Background()
+
+			if err := client.InsertSchema(ctx, &schemas.TallySchema{
+				TallyID:       tallyUUID,
+				Version:       1,
+				Name:          "Test Tally",
+				JSONSchemaRaw: `{}`,
+			}); err != nil {
+				t.Fatalf("failed to seed schema: %v", err)
+			}
+
+			if tt.seedEntry != nil {
+				if err := client.InsertEntry(ctx, tt.seedEntry); err != nil {
+					t.Fatalf("failed to seed entry: %v", err)
+				}
+			}
+
+			err := client.UpdateEntryData(ctx, tt.updateEntry)
+			if tt.wantErrIs != nil {
+				if !errors.Is(err, tt.wantErrIs) {
+					t.Fatalf("UpdateEntryData() error = %v, wantErrIs %v", err, tt.wantErrIs)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// Verify changes were persisted in the database
+			fetched, err := client.GetEntryByID(ctx, tt.updateEntry.ID)
+			if err != nil {
+				t.Fatalf("failed to fetch updated entry: %v", err)
+			}
+			if fetched.Data != tt.wantData {
+				t.Errorf("UpdateEntryData() stored Data = %s, want %s", fetched.Data, tt.wantData)
+			}
+			if tt.updateEntry.UpdatedAt.IsZero() {
+				t.Errorf("expected UpdateEntryData to mutate in-memory UpdatedAt timestamp")
+			}
+		})
+	}
+}
