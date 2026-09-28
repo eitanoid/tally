@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/eitanoid/tally/internal/schemas"
@@ -33,21 +31,10 @@ var schemaListCmd = &cobra.Command{
 			return nil
 		}
 
-		var buf bytes.Buffer
-		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-		_, _ = fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT")
-		for _, s := range list {
-			_, _ = fmt.Fprintf(
-				w, "%s\tv%d\t%s\t%s\n", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339),
-			)
-		}
-		if err := w.Flush(); err != nil {
-			return err
-		}
-		header, body, _ := strings.Cut(buf.String(), "\n")
-		fmt.Println(header)
-		fmt.Println(strings.Repeat("-", len(header)))
-		fmt.Print(body)
+		PrintTable(cmd.OutOrStdout(), "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA", list, func(s schemas.TallySchema) string {
+			return fmt.Sprintf("%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw[:100]+"...")
+
+		})
 		return nil
 	},
 }
@@ -67,17 +54,9 @@ var schemaGetCmd = &cobra.Command{
 			return err
 		}
 
-		var buf bytes.Buffer
-		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-		_, _ = fmt.Fprintln(w, "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA")
-		_, _ = fmt.Fprintf(w, "%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw)
-		if err := w.Flush(); err != nil {
-			return err
-		}
-		header, body, _ := strings.Cut(buf.String(), "\n")
-		fmt.Println(header)
-		fmt.Println(strings.Repeat("-", len(header)))
-		fmt.Print(body)
+		PrintTable(cmd.OutOrStdout(), "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA", []*schemas.TallySchema{s}, func(s *schemas.TallySchema) string {
+			return fmt.Sprintf("%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw)
+		})
 		return nil
 	},
 }

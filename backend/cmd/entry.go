@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
-	"text/tabwriter"
 	"time"
 
+	"github.com/eitanoid/tally/internal/entries"
 	"github.com/spf13/cobra"
 )
 
@@ -21,12 +19,28 @@ var (
 	entryLimit   int
 )
 
-var entryLogCmd = &cobra.Command{
-	Use:     "log",
-	Short:   "Log a new entry against a tally schema",
-	Example: `  tally entry log -t <TALLY_ID> -d '{"book": "The Stranger", "pages": 20}'`,
+var entryAddCmd = &cobra.Command{
+	Use:     "add",
+	Short:   "Add a new entry against a tally schema",
+	Example: `  tally entry add -t <TALLY_ID> -d '{"book": "The Stranger", "pages": 20}'`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		entry, err := tallyService.RecordEntry(cmd.Context(), entryTallyID, entryData)
+		if err != nil {
+			return fmt.Errorf("failed to log entry: %w", err)
+		}
+
+		fmt.Printf("Logged entry %s for tally '%s' (v%d) at %s\n",
+			entry.ID, entry.TallyID, entry.SchemaVersion, entry.CreatedAt.Format("2006-01-02 15:04:05"))
+		return nil
+	},
+}
+
+var entryPatchCmd = &cobra.Command{
+	Use:     "patch",
+	Short:   "Update an existing entry data",
+	Example: `  tally entry patch -t <ENTRY_ID> -d '{"book": "The Stranger", "pages": 15}'`,
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		entry, err := tallyService.UpdateEntry(cmd.Context(), entryTallyID, entryData)
 		if err != nil {
 			return fmt.Errorf("failed to log entry: %w", err)
 		}
@@ -52,36 +66,35 @@ var entryListCmd = &cobra.Command{
 			return nil
 		}
 
-		var buf bytes.Buffer
-		w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
-		_, _ = fmt.Fprintln(w, "ENTRY ID\tVERSION\tCREATED AT\tDATA")
-		for _, e := range list {
-			_, _ = fmt.Fprintf(w, "%s\tv%d\t%s\t%s\n",
-				e.ID, e.SchemaVersion, e.CreatedAt.Format(time.RFC3339), e.Data)
-		}
-		if err := w.Flush(); err != nil {
-			return err
-		}
-		header, body, _ := strings.Cut(buf.String(), "\n")
-		fmt.Println(header)
-		fmt.Println(strings.Repeat("-", len(header)))
-		fmt.Print(body)
-
-		return nil
+		headers := "ENTRY ID\tVERSION\tCREATED AT\tDATA"
+		return PrintTable(cmd.OutOrStdout(), headers, list, func(e entries.TallyEntry) string {
+			return fmt.Sprintf("%s\tv%d\t%s\t%s",
+				e.ID,
+				e.SchemaVersion,
+				e.CreatedAt.Format(time.RFC3339),
+				e.Data,
+			)
+		})
 	},
 }
 
 func init() {
-	entryLogCmd.Flags().StringVarP(&entryTallyID, "tally", "t", "", "Target tally ID")
-	entryLogCmd.Flags().StringVarP(&entryData, "data", "d", "", "JSON data payload string")
-	_ = entryLogCmd.MarkFlagRequired("tally")
-	_ = entryLogCmd.MarkFlagRequired("data")
+	entryAddCmd.Flags().StringVarP(&entryTallyID, "target", "t", "", "Target tally ID")
+	entryAddCmd.Flags().StringVarP(&entryData, "data", "d", "", "JSON data payload string")
+	_ = entryAddCmd.MarkFlagRequired("target")
+	_ = entryAddCmd.MarkFlagRequired("data")
 
-	entryListCmd.Flags().StringVarP(&entryTallyID, "tally", "t", "", "Target tally ID")
+	entryListCmd.Flags().StringVarP(&entryTallyID, "target", "t", "", "Target tally ID")
 	entryListCmd.Flags().IntVarP(&entryLimit, "limit", "l", 20, "Max entries to fetch")
-	_ = entryListCmd.MarkFlagRequired("tally")
+	_ = entryListCmd.MarkFlagRequired("target")
 
-	entryCmd.AddCommand(entryLogCmd)
+	entryPatchCmd.Flags().StringVarP(&entryTallyID, "target", "t", "", "Target entry ID")
+	entryPatchCmd.Flags().StringVarP(&entryData, "data", "d", "", "JSON patch data string")
+	_ = entryListCmd.MarkFlagRequired("target")
+	_ = entryListCmd.MarkFlagRequired("data")
+
+	entryCmd.AddCommand(entryAddCmd)
 	entryCmd.AddCommand(entryListCmd)
+	entryCmd.AddCommand(entryPatchCmd)
 	rootCmd.AddCommand(entryCmd)
 }
