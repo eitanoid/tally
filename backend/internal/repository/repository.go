@@ -28,4 +28,6 @@ type Repository interface {
 	GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error)
 	GetEntryByID(ctx context.Context, entryID string) (*entries.TallyEntry, error)
 	UpdateEntryData(ctx context.Context, entry *entries.TallyEntry) error
+
+	Close() error
 }
