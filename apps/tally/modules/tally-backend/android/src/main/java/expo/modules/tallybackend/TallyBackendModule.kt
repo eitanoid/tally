@@ -38,14 +38,32 @@ class TallyBackendModule : Module() {
       Bridge.ping(name)
     }
 
-    AsyncFunction("listEntries") { reqBytes: ByteArray ->
-      val respBytes = Bridge.listEntries(reqBytes)
-      respBytes
+    AsyncFunction("listEntries") { 
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.listEntries(reqBytes)
+            respBytes
     }
 
-    AsyncFunction("createSchema") { reqBytes: ByteArray ->
-      val respBytes = Bridge.createSchema(reqBytes)
-      respBytes
+    AsyncFunction("createSchema") { 
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.createSchema(reqBytes)
+            respBytes
+    }
+    AsyncFunction("getLatestSchema") {
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.getLatestSchema(reqBytes)
+            respBytes
+
+    }
+    AsyncFunction("listSchemas"){
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.listSchemas(reqBytes)
+            respBytes
+    }
+    AsyncFunction("recordEntry") {
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.recordEntry(reqBytes)
+            respBytes
     }
   }
 }
