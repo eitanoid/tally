@@ -9,16 +9,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func setupTestBridge(t *testing.T) *bridge.Bridge {
+func setupTestBridge(t *testing.T) {
 	t.Helper()
-
+	bridge.Close()
 	// Initialize Bridge with in-memory SQLite database
-	b, err := bridge.New(":memory:")
+	err := bridge.New(":memory:")
 	if err != nil {
 		t.Fatalf("failed to initialize test bridge: %v", err)
 	}
-
-	return b
+	return
 }
 
 func TestBridge_CreateSchema(t *testing.T) {
@@ -73,7 +72,7 @@ func TestBridge_CreateSchema(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := setupTestBridge(t)
+			setupTestBridge(t)
 
 			var inputBytes []byte
 			var err error
@@ -87,7 +86,7 @@ func TestBridge_CreateSchema(t *testing.T) {
 				}
 			}
 
-			outBytes := b.CreateSchema(inputBytes)
+			outBytes := bridge.CreateSchema(inputBytes)
 
 			var resp tallyv1.CreateSchemaResponse
 			if err := proto.Unmarshal(outBytes, &resp); err != nil {
@@ -111,7 +110,7 @@ func TestBridge_CreateSchema(t *testing.T) {
 }
 
 func TestBridge_GetLatestSchema(t *testing.T) {
-	b := setupTestBridge(t)
+	setupTestBridge(t)
 
 	// Seed schema
 	createReq := &tallyv1.CreateSchemaRequest{
@@ -122,7 +121,7 @@ func TestBridge_GetLatestSchema(t *testing.T) {
 		},
 	}
 	createBytes, _ := proto.Marshal(createReq)
-	createOut := b.CreateSchema(createBytes)
+	createOut := bridge.CreateSchema(createBytes)
 	var createResp tallyv1.CreateSchemaResponse
 	_ = proto.Unmarshal(createOut, &createResp)
 
@@ -148,7 +147,7 @@ func TestBridge_GetLatestSchema(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBytes, _ := proto.Marshal(&tallyv1.GetLatestSchemaRequest{TallyId: tt.tallyID})
-			outBytes := b.GetLatestSchema(reqBytes)
+			outBytes := bridge.GetLatestSchema(reqBytes)
 
 			var resp tallyv1.GetLatestSchemaResponse
 			if err := proto.Unmarshal(outBytes, &resp); err != nil {
@@ -172,7 +171,7 @@ func TestBridge_GetLatestSchema(t *testing.T) {
 }
 
 func TestBridge_ListSchemas(t *testing.T) {
-	b := setupTestBridge(t)
+	setupTestBridge(t)
 
 	// Seed 2 schemas
 	for _, name := range []string{"Habits", "Finances"} {
@@ -182,11 +181,11 @@ func TestBridge_ListSchemas(t *testing.T) {
 				{Name: "amount", Type: tallyv1.FieldFormat_FIELD_FORMAT_NUMBER},
 			},
 		})
-		_ = b.CreateSchema(reqBytes)
+		_ = bridge.CreateSchema(reqBytes)
 	}
 
 	reqBytes, _ := proto.Marshal(&tallyv1.ListSchemasRequest{})
-	outBytes := b.ListSchemas(reqBytes)
+	outBytes := bridge.ListSchemas(reqBytes)
 
 	var resp tallyv1.ListSchemasResponse
 	if err := proto.Unmarshal(outBytes, &resp); err != nil {
@@ -203,7 +202,7 @@ func TestBridge_ListSchemas(t *testing.T) {
 }
 
 func TestBridge_RecordAndListEntries(t *testing.T) {
-	b := setupTestBridge(t)
+	setupTestBridge(t)
 
 	// Seed schema
 	createReq := &tallyv1.CreateSchemaRequest{
@@ -213,7 +212,7 @@ func TestBridge_RecordAndListEntries(t *testing.T) {
 		},
 	}
 	createBytes, _ := proto.Marshal(createReq)
-	createOut := b.CreateSchema(createBytes)
+	createOut := bridge.CreateSchema(createBytes)
 	var createResp tallyv1.CreateSchemaResponse
 	_ = proto.Unmarshal(createOut, &createResp)
 
@@ -244,7 +243,7 @@ func TestBridge_RecordAndListEntries(t *testing.T) {
 					PayloadJson: tt.payload,
 				})
 
-				recordOut := b.RecordEntry(recordReqBytes)
+				recordOut := bridge.RecordEntry(recordReqBytes)
 				var recordResp tallyv1.RecordEntryResponse
 				if err := proto.Unmarshal(recordOut, &recordResp); err != nil {
 					t.Fatalf("failed to unmarshal RecordEntryResponse: %v", err)
@@ -267,7 +266,7 @@ func TestBridge_RecordAndListEntries(t *testing.T) {
 			TallyId:     tallyID,
 			PayloadJson: `{"ml": 750}`,
 		})
-		_ = b.RecordEntry(rec2Bytes)
+		_ = bridge.RecordEntry(rec2Bytes)
 
 		listReqBytes, _ := proto.Marshal(&tallyv1.ListEntriesRequest{
 			TallyId: tallyID,
@@ -275,7 +274,7 @@ func TestBridge_RecordAndListEntries(t *testing.T) {
 			Offset:  0,
 		})
 
-		listOut := b.ListEntries(listReqBytes)
+		listOut := bridge.ListEntries(listReqBytes)
 		var listResp tallyv1.ListEntriesResponse
 		if err := proto.Unmarshal(listOut, &listResp); err != nil {
 			t.Fatalf("failed to unmarshal ListEntriesResponse: %v", err)

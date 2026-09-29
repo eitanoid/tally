@@ -4,6 +4,7 @@ package bridge
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/eitanoid/tally/generated/pb/tallyv1"
 	"github.com/eitanoid/tally/internal/repository"
@@ -13,27 +14,84 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// Bridge acts as a simplified entry point for external callers.
-type Bridge struct {
+// bridge acts as a stateful entry point for external callers.
+type bridge struct {
 	service *service.TallyService
 	ctx     context.Context
 }
 
-// New creates a new bridge client.
-func New(dbPath string) (*Bridge, error) {
-	sqlClient, err := repository.NewSQLiteClient(dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to init db at %s: %w", dbPath, err)
+var (
+	instance *bridge
+	mu       sync.RWMutex
+)
+
+func get() (*bridge, error) {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	if instance == nil {
+		return nil, fmt.Errorf("bridge engine not initialized: call Init() first")
+	}
+	return instance, nil
+}
+
+// New creates a new bridge stateful client.
+func New(dbPath string) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if instance != nil {
+		return nil // Already initialized
 	}
 
-	return &Bridge{
+	sqlClient, err := repository.NewSQLiteClient(dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to init db at %s: %w", dbPath, err)
+	}
+
+	instance = &bridge{
 		service: service.NewTallyService(sqlClient),
 		ctx:     context.Background(),
-	}, nil
+	}
+
+	return nil
+}
+
+// Close gracefully stops the bridge and resets the singleton instance.
+func Close() error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if instance == nil {
+		return nil
+	}
+
+	var closeErr error
+	if instance.service != nil {
+		closeErr = instance.service.Close()
+	}
+
+	instance = nil
+	return closeErr
+}
+
+// Ping is a test function
+func Ping(name string) string {
+	return fmt.Sprintf("Hello %s! Go engine is alive 🚀", name)
 }
 
 // ListEntries accepts a serialized ListEntriesRequest and returns a serialized ListEntriesResponse.
-func (b *Bridge) ListEntries(requestBytes []byte) []byte {
+func ListEntries(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setListEntriesErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
 	var req tallyv1.ListEntriesRequest
 	if err := unmarshalRequest(requestBytes, &req); err != nil {
 		return marshalProtoError(
@@ -43,7 +101,7 @@ func (b *Bridge) ListEntries(requestBytes []byte) []byte {
 		)
 	}
 
-	paginated, err := b.service.ListEntries(b.ctx, req.GetTallyId(), int(req.GetLimit()), int(req.GetOffset()))
+	paginated, err := st.service.ListEntries(st.ctx, req.GetTallyId(), int(req.GetLimit()), int(req.GetOffset()))
 	if err != nil {
 		return marshalProtoError(
 			setListEntriesErr,
@@ -85,7 +143,17 @@ func (b *Bridge) ListEntries(requestBytes []byte) []byte {
 }
 
 // CreateSchema accepts a serialized CreateSchemaRequest and returns a serialized CreateSchemaResponse.
-func (b *Bridge) CreateSchema(requestBytes []byte) []byte {
+func CreateSchema(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setCreateSchemaErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
 	var req tallyv1.CreateSchemaRequest
 	if err := unmarshalRequest(requestBytes, &req); err != nil {
 		return marshalProtoError(
@@ -111,7 +179,7 @@ func (b *Bridge) CreateSchema(requestBytes []byte) []byte {
 		sr.WithField(field.GetName(), field.GetDescription(), fieldType, field.GetRequired())
 	}
 
-	schema, err := b.service.CreateSchema(b.ctx, sr)
+	schema, err := st.service.CreateSchema(st.ctx, sr)
 	if err != nil {
 		return marshalProtoError(
 			setCreateSchemaErr,
@@ -139,7 +207,17 @@ func (b *Bridge) CreateSchema(requestBytes []byte) []byte {
 }
 
 // GetLatestSchema accepts a serialized GetLatestSchemaRequest and returns a serialized GetLatestSchemaResponse.
-func (b *Bridge) GetLatestSchema(requestBytes []byte) []byte {
+func GetLatestSchema(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setGetLatestSchemaErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
 	var req tallyv1.GetLatestSchemaRequest
 	if err := unmarshalRequest(requestBytes, &req); err != nil {
 		return marshalProtoError(
@@ -149,7 +227,7 @@ func (b *Bridge) GetLatestSchema(requestBytes []byte) []byte {
 		)
 	}
 
-	schema, err := b.service.GetLatestSchema(b.ctx, req.GetTallyId())
+	schema, err := st.service.GetLatestSchema(st.ctx, req.GetTallyId())
 	if err != nil {
 		return marshalProtoError(
 			setGetLatestSchemaErr,
@@ -182,7 +260,17 @@ func (b *Bridge) GetLatestSchema(requestBytes []byte) []byte {
 }
 
 // ListSchemas accepts a serialized ListSchemasRequest and returns a serialized ListSchemasResponse.
-func (b *Bridge) ListSchemas(requestBytes []byte) []byte {
+func ListSchemas(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setListSchemasErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
 	var req tallyv1.ListSchemasRequest
 	if err := unmarshalRequest(requestBytes, &req); err != nil {
 		return marshalProtoError(
@@ -192,7 +280,7 @@ func (b *Bridge) ListSchemas(requestBytes []byte) []byte {
 		)
 	}
 
-	schemaList, err := b.service.ListSchemas(b.ctx)
+	schemaList, err := st.service.ListSchemas(st.ctx)
 	if err != nil {
 		return marshalProtoError(
 			setListSchemasErr,
@@ -230,7 +318,17 @@ func (b *Bridge) ListSchemas(requestBytes []byte) []byte {
 }
 
 // RecordEntry accepts a serialized RecordEntryRequest and returns a serialized RecordEntryResponse.
-func (b *Bridge) RecordEntry(requestBytes []byte) []byte {
+func RecordEntry(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setListSchemasErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
 	var req tallyv1.RecordEntryRequest
 	if err := unmarshalRequest(requestBytes, &req); err != nil {
 		return marshalProtoError(
@@ -240,7 +338,7 @@ func (b *Bridge) RecordEntry(requestBytes []byte) []byte {
 		)
 	}
 
-	entry, err := b.service.RecordEntry(b.ctx, req.GetTallyId(), req.GetPayloadJson())
+	entry, err := st.service.RecordEntry(st.ctx, req.GetTallyId(), req.GetPayloadJson())
 	if err != nil {
 		return marshalProtoError(
 			setRecordEntryErr,
