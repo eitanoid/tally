@@ -6,8 +6,8 @@ UI: Expo (React Native) + react-native-paper
 Backend: Go + SQLite, compiled into native libraries via gomobile
 Bridge: Binary Protobuf over FFI (Kotlin JNI for Android)
 
-<detials>
-<summary><h3>CLI demo<\h3></summary>
+<details>
+<summary><h3>CLI demo</h3></summary>
 
 ```sh
 $ tally schema list
@@ -61,11 +61,11 @@ $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
 > 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   -                      {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
 ```
 
-<\details>
+</details>
 
 
 <details>
-<summary><h3>Expansion Details<\h3></summary>
+<summary><h3>Expansion Details</h3></summary>
 
 To expand the featureset of the app (from the backend), these are the required steps:
 
@@ -156,7 +156,7 @@ export async function newFeature(
   return fromBinary(NewFeatureResponseSchema, respBytes);
 }
 ```
-<\details>
+</details>
 
 ## Future features / TODOs
 
