@@ -2,25 +2,18 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, useColorScheme, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   PaperProvider,
   MD3LightTheme,
   MD3DarkTheme,
-  Surface,
   Text,
   FAB,
   Portal,
   Dialog,
-  TextInput,
   Button,
-  TouchableRipple,
   IconButton,
   Menu,
-  SegmentedButtons,
 } from 'react-native-paper';
 
 import {
@@ -28,24 +21,18 @@ import {
   listSchemas,
   createSchema,
   listEntries,
-  recordEntry,
 } from './modules/tally-backend';
 import {
-  FieldFormat,
   ResponseCode,
   type Schema,
 } from './generated/tally/v1/service_pb';
 
-// --- Types ---
+import { SchemaCard, TallyViewModel } from './components/SchemaCard';
+import { SchemaCreateModal, DynamicField } from './components/SchemaCreateModal';
+import { SchemaDetailScreen } from './screens/schemaDetailScreen';
+
 type ThemeMode = 'light' | 'dark' | 'auto';
 
-interface TallyViewModel {
-  schema: Schema;
-  count: number;
-  lastRecordedAt: string;
-}
-
-// --- Themes ---
 const lightTheme = {
   ...MD3LightTheme,
   colors: {
@@ -64,7 +51,6 @@ const darkTheme = {
   },
 };
 
-// --- Theme Context ---
 const ThemeContext = createContext<{
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
@@ -88,16 +74,19 @@ export default function App(): React.JSX.Element {
       <SafeAreaProvider>
         <PaperProvider theme={activeTheme}>
           <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-          <MainAppContent />
+          <MainAppRouter />
         </PaperProvider>
       </SafeAreaProvider>
     </ThemeContext.Provider>
   );
 }
 
-function MainAppContent() {
+function MainAppRouter() {
   const insets = useSafeAreaInsets();
   const { themeMode, setThemeMode } = useContext(ThemeContext);
+
+  // --- Router / Screen state ---
+  const [selectedSchema, setSelectedSchema] = useState<Schema | null>(null);
 
   // --- Backend State ---
   const [tallies, setTallies] = useState<TallyViewModel[]>([]);
@@ -105,32 +94,20 @@ function MainAppContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // --- UI Dialog & Menu States ---
-  const [fabOpen, setFabOpen] = useState(false);
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
   const [settingsDialogVisible, setSettingsDialogVisible] = useState(false);
   const [themeMenuVisible, setThemeMenuVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- Create Tally Form State ---
-  const [newTallyName, setNewTallyName] = useState('');
-  const [newTallyDesc, setNewTallyDesc] = useState('');
-  const [newFieldName, setNewFieldName] = useState('count');
-  const [selectedFieldFormat, setSelectedFieldFormat] = useState<FieldFormat>(
-    FieldFormat.INTEGER
-  );
-
-  // --- 1. FETCH ALL SCHEMAS & ENTRY STATS FROM GO BACKEND ---
   const fetchTalliesFromBackend = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      // Call listSchemas FFI RPC
       const res = await listSchemas({});
       if (res.code !== ResponseCode.OK) {
         throw new Error(res.errorMessage || 'Failed to list schemas');
       }
 
-      // Fetch count and last recorded entry for each schema in parallel
       const loadedTallies: TallyViewModel[] = await Promise.all(
         res.schemas.map(async (schema) => {
           try {
@@ -173,37 +150,30 @@ function MainAppContent() {
     fetchTalliesFromBackend();
   }, [fetchTalliesFromBackend]);
 
-  // --- 2. CREATE SCHEMA RPC HANDLER ---
-  const handleCreateTally = async () => {
-    if (!newTallyName.trim()) return;
-
+  const handleCreateTally = async (
+    name: string,
+    description: string,
+    fields: DynamicField[]
+  ) => {
     setIsSubmitting(true);
     try {
       const res = await createSchema({
-        name: newTallyName.trim(),
-        description: newTallyDesc.trim() || 'No description',
-        fields: [
-          {
-            $typeName: 'tally.v1.SchemaRequestField',
-            name: newFieldName.trim() || 'value',
-            description: 'Default field value',
-            type: selectedFieldFormat,
-            required: true,
-          },
-        ],
+        name,
+        description: description || 'No description',
+        fields: fields.map((f) => ({
+          $typeName: 'tally.v1.SchemaRequestField',
+          name: f.name,
+          description: f.description,
+          type: f.format,
+          required: f.required,
+        })),
       });
 
       if (res.code !== ResponseCode.OK) {
         throw new Error(res.errorMessage || 'Failed to create schema');
       }
 
-      // Reset Form State
-      setNewTallyName('');
-      setNewTallyDesc('');
-      setNewFieldName('count');
       setCreateDialogVisible(false);
-
-      // Refresh list from Go SQLite database
       await fetchTalliesFromBackend();
     } catch (err: any) {
       console.error('Create Schema Error:', err);
@@ -213,37 +183,30 @@ function MainAppContent() {
     }
   };
 
-  // --- 3. RECORD ENTRY RPC HANDLER ---
-  const handleIncrement = async (tally: TallyViewModel) => {
-    try {
-      const payload = JSON.stringify({ count: tally.count + 1, timestamp: Date.now() });
-
-      const res = await recordEntry({
-        tallyId: tally.schema.tallyId,
-        schemaVersion: tally.schema.schemaVersion,
-        payloadJson: payload,
-      });
-
-      if (res.code !== ResponseCode.OK) {
-        throw new Error(res.errorMessage || 'Failed to record entry');
-      }
-
-      // Refresh view model with newly recorded entry
-      await fetchTalliesFromBackend();
-    } catch (err: any) {
-      console.error('Record Entry Error:', err);
-    }
-  };
-
   const getThemeIcon = () => {
     if (themeMode === 'light') return 'weather-sunny';
     if (themeMode === 'dark') return 'weather-night';
     return 'theme-light-dark';
   };
 
+  // Render Detail Screen if a schema is selected
+  if (selectedSchema) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <SchemaDetailScreen
+          schema={selectedSchema}
+          onBack={() => {
+            setSelectedSchema(null);
+            fetchTalliesFromBackend();
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Compact Header */}
+      {/* App Bar Header */}
       <View style={styles.compactHeader}>
         <Text style={styles.headerTitle}>Tally</Text>
         <View style={styles.headerActions}>
@@ -292,7 +255,7 @@ function MainAppContent() {
         </View>
       </View>
 
-      {/* Main Content Area */}
+      {/* Main List */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {loading ? (
           <View style={styles.emptyContainer}>
@@ -307,7 +270,11 @@ function MainAppContent() {
               Backend Error
             </Text>
             <Text variant="bodySmall">{errorMsg}</Text>
-            <Button mode="outlined" style={{ marginTop: 16 }} onPress={fetchTalliesFromBackend}>
+            <Button
+              mode="outlined"
+              style={{ marginTop: 16 }}
+              onPress={fetchTalliesFromBackend}
+            >
               Retry
             </Button>
           </View>
@@ -317,126 +284,46 @@ function MainAppContent() {
               You have no tallies right now
             </Text>
             <Text variant="bodySmall" style={styles.emptySubtext}>
-              Tap the + button to create your first tally schema in SQLite.
+              Tap the + button to create your first tally schema.
             </Text>
           </View>
         ) : (
           tallies.map((tally) => (
-            <Surface key={tally.schema.tallyId} style={styles.horizontalCard} elevation={1}>
-              <TouchableRipple
-                style={styles.cardRipple}
-                onPress={() => handleIncrement(tally)}
-                rippleColor="rgba(0, 0, 0, .1)"
-              >
-                <View style={styles.cardRow}>
-                  {/* Left Column: Name & Description */}
-                  <View style={styles.leftCol}>
-                    <Text variant="titleMedium" style={styles.tallyName} numberOfLines={1}>
-                      {tally.schema.name}
-                    </Text>
-                    <Text variant="bodySmall" style={styles.tallyDescription} numberOfLines={1}>
-                      {tally.schema.description}
-                    </Text>
-                  </View>
-
-                  {/* Right Column: Count & Timestamp */}
-                  <View style={styles.rightCol}>
-                    <Text variant="headlineMedium" style={styles.tallyCount}>
-                      {tally.count}
-                    </Text>
-                    <Text variant="labelSmall" style={styles.lastRecorded}>
-                      {tally.lastRecordedAt}
-                    </Text>
-                  </View>
-                </View>
-              </TouchableRipple>
-            </Surface>
+            <SchemaCard
+              key={tally.schema.tallyId}
+              tally={tally}
+              onPress={() => setSelectedSchema(tally.schema)}
+            />
           ))
         )}
       </ScrollView>
 
-      {/* Speed Dial Expanding FAB */}
+      {/* Create Tally FAB */}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={() => setCreateDialogVisible(true)}
+      />
+
+      {/* Schema Creation Modal */}
+      <SchemaCreateModal
+        visible={createDialogVisible}
+        onDismiss={() => setCreateDialogVisible(false)}
+        onSubmit={handleCreateTally}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Settings Dialog */}
       <Portal>
-        <FAB.Group
-          open={fabOpen}
-          visible
-          icon={fabOpen ? 'close' : 'plus'}
-          actions={[
-            {
-              icon: 'file-document-plus-outline',
-              label: 'Create New Tally',
-              onPress: () => setCreateDialogVisible(true),
-            },
-            {
-              icon: 'playlist-plus',
-              label: 'Record Entry',
-              onPress: () => {
-                if (tallies.length > 0) handleIncrement(tallies[0]);
-              },
-            },
-          ]}
-          onStateChange={({ open }) => setFabOpen(open)}
-        />
-
-        {/* Create Tally Dialog */}
-        <Dialog visible={createDialogVisible} onDismiss={() => setCreateDialogVisible(false)}>
-          <Dialog.Title>Create New Tally Schema</Dialog.Title>
-          <Dialog.Content>
-            <TextInput
-              label="Tally Name"
-              value={newTallyName}
-              onChangeText={setNewTallyName}
-              mode="outlined"
-              style={{ marginBottom: 8 }}
-              autoFocus
-            />
-            <TextInput
-              label="Description (optional)"
-              value={newTallyDesc}
-              onChangeText={setNewTallyDesc}
-              mode="outlined"
-              style={{ marginBottom: 12 }}
-            />
-            <TextInput
-              label="Default Field Name"
-              value={newFieldName}
-              onChangeText={setNewFieldName}
-              mode="outlined"
-              style={{ marginBottom: 12 }}
-            />
-            <Text variant="bodySmall" style={{ marginBottom: 6 }}>
-              Field Data Type:
-            </Text>
-            <SegmentedButtons
-              value={selectedFieldFormat.toString()}
-              onValueChange={(val) => setSelectedFieldFormat(Number(val) as FieldFormat)}
-              buttons={[
-                { value: FieldFormat.INTEGER.toString(), label: 'Integer' },
-                { value: FieldFormat.STRING.toString(), label: 'String' },
-                { value: FieldFormat.BOOLEAN.toString(), label: 'Bool' },
-              ]}
-            />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setCreateDialogVisible(false)} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreateTally}
-              disabled={!newTallyName.trim() || isSubmitting}
-              loading={isSubmitting}
-            >
-              Create
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-
-        {/* Settings Dialog */}
-        <Dialog visible={settingsDialogVisible} onDismiss={() => setSettingsDialogVisible(false)}>
+        <Dialog
+          visible={settingsDialogVisible}
+          onDismiss={() => setSettingsDialogVisible(false)}
+        >
           <Dialog.Title>Settings</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodyMedium">Engine: Go SQLite Bridge (gomobile + Protobuf FFI)</Text>
+            <Text variant="bodyMedium">
+              Engine: Go SQLite Bridge (gomobile + Protobuf FFI)
+            </Text>
             <Text variant="bodySmall" style={{ marginTop: 8, opacity: 0.6 }}>
               App version 0.0.1 (React Native + Paper)
             </Text>
@@ -488,45 +375,9 @@ const styles = StyleSheet.create({
   emptySubtext: {
     opacity: 0.5,
   },
-  horizontalCard: {
-    marginBottom: 8,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  cardRipple: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  leftCol: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  rightCol: {
-    alignItems: 'flex-end',
-  },
-  tallyName: {
-    fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  tallyDescription: {
-    opacity: 0.6,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  tallyCount: {
-    fontWeight: 'bold',
-    fontSize: 22,
-    lineHeight: 26,
-  },
-  lastRecorded: {
-    opacity: 0.4,
-    fontSize: 10,
-    marginTop: 1,
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
   },
 });
