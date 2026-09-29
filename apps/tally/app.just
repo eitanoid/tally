@@ -1,6 +1,9 @@
 mod_dir := module_directory()
 
-# Start Metro JS bundler with restricted memory
+build-modules:
+    npx expo prebuild --clean --platform android
+
+# Build and package app for android
 android:
     set working-directory = {{ mod_dir }}
     npx expo run:android
@@ -9,3 +12,10 @@ android:
 clean:
     set working-directory = {{ mod_dir }}
     cd android && ./gradlew clean --stop
+
+adb:
+    @echo 'to paid a phone run:'
+    @echo 'adb pair <ip>:<port>'
+    @echo 'adb connect <ip>:<port>'
+    @echo 'adb connect <ip>:<port>'
+    @echo 'adb reverse tcp:8081 tcp:8081 <ip>'
