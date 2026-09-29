@@ -1,6 +1,11 @@
 mod_dir := module_directory()
 
+install:
+    set working-directory = {{ mod_dir }}
+    yarn install
+
 build-modules:
+    set working-directory = {{ mod_dir }}
     npx expo prebuild --clean --platform android
 
 # Build and package app for android
