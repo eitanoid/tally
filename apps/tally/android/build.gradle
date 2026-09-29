@@ -17,6 +17,9 @@ allprojects {
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
+    flatDir {
+            dirs "${rootDir}/../modules/tally-backend/android/src/libs"
+        }
   }
 }
 
