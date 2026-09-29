@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["TallyBackendModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.tallybackend.TallyBackendModule"]
+  }
+}

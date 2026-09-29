@@ -22,7 +22,7 @@ import {
   Menu,
 } from 'react-native-paper';
 import './generated/tally/v1/service_pb.ts';
-
+import { hello } from "./modules/tally-backend";
 // --- Types ---
 type ThemeMode = 'light' | 'dark' | 'auto';
 
@@ -63,6 +63,7 @@ const ThemeContext = createContext<{
 });
 
 export default function App(): React.JSX.Element {
+  console.log(hello())
   const systemColorScheme = useColorScheme();
   const [themeMode, setThemeMode] = useState<ThemeMode>('auto');
 
@@ -93,8 +94,8 @@ function MainAppContent() {
   const [tallies, setTallies] = useState<Tally[]>([
     {
       id: '1',
-      name: 'Water 2',
-      description: 'Daily glass count',
+      name: 'Water 3',
+      description: 'Daily glass count 2',
       count: 4,
       lastRecordedAt: '10 mins ago',
     },
