@@ -57,7 +57,101 @@ $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
 > 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   -                      {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
 ```
 
-Generic habit tracking app for Android (in the future)
+## Expansion details
+
+UI: Expo (React Native) + react-native-paper
+Backend: Go + SQLite, compiled into native libraries via gomobile
+Bridge: Binary Protobuf over FFI (Kotlin JNI for Android / Swift for iOS)
+
+1 .Define your new request and response payloads in service.proto:
+```proto
+message NewFeatureRequest {
+  string tally_id = 1;
+}
+
+message NewFeatureResponse {
+  ResponseCode code = 1;
+  string error_message = 2;
+}
+```
+
+2. Run code generation to update both Go and TypeScript Protobuf bindings:
+```bash
+just generate
+```
+
+3. Implement domain logic (`service.go`) using domain data:
+```go
+func (s *Service) NewFeature(ctx context.Context, req NewFeatureRequest) ( error) {
+    // ... DB / Business logic
+    return nil
+}
+```
+
+4. Expose FFI Export (`bridge.go`)
+```go
+func NewFeature(reqBytes []byte) []byte {
+    // ...
+    return respBytes
+}
+```
+
+5. Rebuild Native Libraries (gomobile)
+```bash
+just bind
+```
+
+6. Register Native Async Function (Kotlin)
+Expose the new bridge function inside the Expo module definition:
+```kotlin
+// apps/tally/modules/tally-backend/android/src/main/java/expo/modules/tallybackend/TallyBackendModule.kt
+AsyncFunction("newFeature") { reqBytes: ByteArray ->
+    Bridge.newFeature(reqBytes)
+}
+```
+
+7. Update TypeScript Module Interface
+```ts
+// apps/tally/modules/tally-backend/src/TallyBackendModule.ts
+declare class TallyBackendModule extends NativeModule<{}> {
+  listEntries(reqBytes: Uint8Array): Promise<Uint8Array>;
+  newFeature(reqBytes: Uint8Array): Promise<Uint8Array>;
+}
+```
+
+
+6. Register the new function's signature in the native-module:
+```ts
+// apps/tally/modules/tally-backend/src/TallyBackendModule.ts
+declare class TallyBackendModule extends NativeModule<{}> {
+    listEntries(reqBytes: Uint8Array): Promise<Uint8Array>;
+    /// ...
+    newFeature(reqBytes: Uint8Array): Promise<Uint8Array>;
+}
+
+```
+
+```ts
+// apps/tally/modules/tally-backend/index.ts
+import { create, toBinary, fromBinary, type Init } from '@bufbuild/protobuf';
+import {
+  NewFeatureRequestSchema,
+  NewFeatureResponseSchema,
+  type NewFeatureResponse,
+} from '../../generated/tally/v1/service_pb';
+import TallyBackendModule from './src/TallyBackendModule';
+
+export async function newFeature(
+  request: Init<typeof NewFeatureRequestSchema>
+): Promise<NewFeatureResponse> {
+  const msg = create(NewFeatureRequestSchema, request);
+  const reqBytes = toBinary(NewFeatureRequestSchema, msg);
+  const respBytes = await TallyBackendModule.newFeature(reqBytes);
+  return fromBinary(NewFeatureResponseSchema, respBytes);
+}
+```
+
+
 
 Features:
 - Create a new habit with a row schema (eg. Medicine: name string, dose-mg int, time timestamp)
