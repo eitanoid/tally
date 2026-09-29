@@ -1,19 +1,13 @@
 // vi: set ts=2 sw=2
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, ActivityIndicator } from 'react-native';
-import {
-  Text,
-  IconButton,
-  SegmentedButtons,
-  Surface,
-  Menu,
-  DataTable,
-  FAB,
-  Button,
-} from 'react-native-paper';
+import { StyleSheet, View, ScrollView, ActivityIndicator, BackHandler } from 'react-native';
+import { Text, FAB, Button, useTheme } from 'react-native-paper';
 import { Schema, Entry } from '../generated/tally/v1/service_pb';
 import { listEntries, recordEntry } from '../modules/tally-backend';
-import { DynamicEntryFormModal } from '../components/EntryRecordModal';
+import { DynamicEntryFormModal } from '../components/DynamicEntryFormModal';
+import { SchemaDetailHeader } from '../components/SchemaDetailHeader';
+import { EntryCard } from '../components/EntryCard';
+import { EntryTable } from '../components/EntryTable';
 
 interface SchemaDetailScreenProps {
   schema: Schema;
@@ -21,15 +15,30 @@ interface SchemaDetailScreenProps {
 }
 
 export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) {
+  const theme = useTheme();
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [menuVisibleId, setMenuVisibleId] = useState<string | null>(null);
 
   // Form Modal state
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Intercept device back button to return to tally list instead of exiting app
+  useEffect(() => {
+    const onBackPress = () => {
+      if (formModalVisible) {
+        setFormModalVisible(false);
+        setSelectedEntry(null);
+        return true;
+      }
+      onBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [formModalVisible, onBack]);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -81,30 +90,26 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     }
   };
 
+  const handleEditEntry = (entry: Entry) => {
+    setSelectedEntry(entry);
+    setFormModalVisible(true);
+  };
+
+  const handleDeleteEntry = (entry: Entry) => {
+    // Reserved for future delete entry endpoint
+    console.log('Delete entry requested for:', entry.entryId);
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Header bar */}
-      <View style={styles.appBar}>
-        <IconButton icon="arrow-left" onPress={onBack} />
-        <View style={{ flex: 1 }}>
-          <Text variant="titleMedium" numberOfLines={1} style={{ fontWeight: '700' }}>
-            {schema.name}
-          </Text>
-          <Text variant="bodySmall" numberOfLines={1} style={{ opacity: 0.6 }}>
-            {schema.description}
-          </Text>
-        </View>
-        <SegmentedButtons
-          value={viewMode}
-          onValueChange={(val) => setViewMode(val as 'cards' | 'table')}
-          density="high"
-          style={{ width: 120 }}
-          buttons={[
-            { value: 'cards', icon: 'view-grid-outline' },
-            { value: 'table', icon: 'table' },
-          ]}
-        />
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Header Bar and Metadata Summary */}
+      <SchemaDetailHeader
+        schema={schema}
+        totalEntries={entries.length}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onBack={onBack}
+      />
 
       {/* Main Content */}
       {loading ? (
@@ -113,12 +118,12 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
         </View>
       ) : entries.length === 0 ? (
         <View style={styles.centered}>
-          <Text variant="titleMedium" style={{ opacity: 0.6 }}>
+          <Text variant="titleMedium" style={styles.emptyTitle}>
             No entries logged yet
           </Text>
           <Button
             mode="outlined"
-            style={{ marginTop: 12 }}
+            style={styles.emptyButton}
             onPress={() => {
               setSelectedEntry(null);
               setFormModalVisible(true);
@@ -129,126 +134,22 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
         </View>
       ) : viewMode === 'cards' ? (
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {entries.map((entry) => {
-            let dataObj: Record<string, any> = {};
-            try {
-              dataObj = JSON.parse(entry.data);
-            } catch { }
-
-            return (
-              <Surface key={entry.entryId} style={styles.entryCard} elevation={1}>
-                <View style={styles.entryHeader}>
-                  <Text variant="labelSmall" style={{ opacity: 0.5 }}>
-                    ID: {entry.entryId.slice(0, 8)}...
-                  </Text>
-                  <Menu
-                    visible={menuVisibleId === entry.entryId}
-                    onDismiss={() => setMenuVisibleId(null)}
-                    anchor={
-                      <IconButton
-                        icon="dots-vertical"
-                        size={18}
-                        onPress={() => setMenuVisibleId(entry.entryId)}
-                      />
-                    }
-                  >
-                    <Menu.Item
-                      onPress={() => {
-                        setMenuVisibleId(null);
-                        setSelectedEntry(entry);
-                        setFormModalVisible(true);
-                      }}
-                      title="Edit"
-                      leadingIcon="pencil"
-                    />
-                    <Menu.Item
-                      onPress={() => {
-                        setMenuVisibleId(null);
-                        // Trigger delete call when ready
-                      }}
-                      title="Delete"
-                      leadingIcon="delete"
-                    />
-                  </Menu>
-                </View>
-
-                {Object.entries(dataObj).map(([key, val]) => (
-                  <View key={key} style={styles.dataRow}>
-                    <Text variant="bodyMedium" style={styles.dataKey}>
-                      {key}:
-                    </Text>
-                    <Text variant="bodyMedium" style={styles.dataVal}>
-                      {String(val)}
-                    </Text>
-                  </View>
-                ))}
-              </Surface>
-            );
-          })}
+          {entries.map((entry) => (
+            <EntryCard
+              key={entry.entryId}
+              entry={entry}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+            />
+          ))}
         </ScrollView>
       ) : (
-        /* Table View */
-        <ScrollView horizontal style={styles.tableWrapper}>
-          <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
-            <DataTable>
-              <DataTable.Header>
-                <DataTable.Title style={{ width: 100 }}>ID</DataTable.Title>
-                {schemaProps.map((prop) => (
-                  <DataTable.Title key={prop} style={{ width: 120 }}>
-                    {prop}
-                  </DataTable.Title>
-                ))}
-                <DataTable.Title style={{ width: 60 }}>Actions</DataTable.Title>
-              </DataTable.Header>
-
-              {entries.map((entry) => {
-                let dataObj: Record<string, any> = {};
-                try {
-                  dataObj = JSON.parse(entry.data);
-                } catch { }
-
-                return (
-                  <DataTable.Row key={entry.entryId}>
-                    <DataTable.Cell style={{ width: 100 }}>
-                      {entry.entryId.slice(0, 6)}
-                    </DataTable.Cell>
-                    {schemaProps.map((prop) => (
-                      <DataTable.Cell key={prop} style={{ width: 120 }}>
-                        {dataObj[prop] !== undefined ? String(dataObj[prop]) : '-'}
-                      </DataTable.Cell>
-                    ))}
-                    <DataTable.Cell style={{ width: 60 }}>
-                      <Menu
-                        visible={menuVisibleId === entry.entryId}
-                        onDismiss={() => setMenuVisibleId(null)}
-                        anchor={
-                          <IconButton
-                            icon="dots-vertical"
-                            size={16}
-                            onPress={() => setMenuVisibleId(entry.entryId)}
-                          />
-                        }
-                      >
-                        <Menu.Item
-                          onPress={() => {
-                            setMenuVisibleId(null);
-                            setSelectedEntry(entry);
-                            setFormModalVisible(true);
-                          }}
-                          title="Edit"
-                        />
-                        <Menu.Item
-                          onPress={() => setMenuVisibleId(null)}
-                          title="Delete"
-                        />
-                      </Menu>
-                    </DataTable.Cell>
-                  </DataTable.Row>
-                );
-              })}
-            </DataTable>
-          </ScrollView>
-        </ScrollView>
+        <EntryTable
+          entries={entries}
+          schemaProps={schemaProps}
+          onEdit={handleEditEntry}
+          onDelete={handleDeleteEntry}
+        />
       )}
 
       {/* FAB for new Entry */}
@@ -261,11 +162,12 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
         }}
       />
 
-      {/* Dynamic Entry Recording Form */}
+      {/* Dynamic Entry Recording Form with locked schema */}
       <DynamicEntryFormModal
         visible={formModalVisible}
         title={selectedEntry ? 'Edit Entry' : 'Record New Entry'}
-        jsonSchemaRaw={schema.jsonSchema}
+        schema={schema}
+        lockSchema={true}
         initialData={selectedEntry ? JSON.parse(selectedEntry.data || '{}') : {}}
         onDismiss={() => {
           setFormModalVisible(false);
@@ -282,46 +184,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  appBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 12,
-    height: 56,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptyTitle: {
+    opacity: 0.6,
+  },
+  emptyButton: {
+    marginTop: 12,
+  },
   scrollContent: {
     padding: 12,
     paddingBottom: 80,
-  },
-  entryCard: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  entryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: -8,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 2,
-  },
-  dataKey: {
-    fontWeight: '600',
-    marginRight: 6,
-  },
-  dataVal: {
-    opacity: 0.8,
-  },
-  tableWrapper: {
-    flex: 1,
   },
   fab: {
     position: 'absolute',

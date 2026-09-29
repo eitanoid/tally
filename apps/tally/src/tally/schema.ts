@@ -21,25 +21,17 @@ import {
     type ListEntriesResponse,
     type ListSchemasResponse,
     type RecordEntryResponse,
-    type Schema
+    type Schema,
+    FieldFormat,
 } from '../../generated/tally/v1/service_pb';
+
+export { FieldFormat };
 
 export interface FieldDefinition {
     name: string;
     description?: string;
     type: FieldFormat;
     required?: boolean;
-}
-
-export enum FieldFormat {
-    STRING = 1,
-    INTEGER = 2,
-    NUMBER = 3,
-    BOOLEAN = 4,
-    DATE_TIME = 5,
-    DATE = 6,
-    TIME = 7,
-    DURATION = 8
 }
 
 export interface CreateSchemaInput {

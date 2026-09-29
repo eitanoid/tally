@@ -1,6 +1,6 @@
 // vi: set ts=2 sw=2
 import { StyleSheet, View } from 'react-native';
-import { Surface, Text, TouchableRipple } from 'react-native-paper';
+import { Surface, Text, TouchableRipple, useTheme } from 'react-native-paper';
 import { Schema } from '../generated/tally/v1/service_pb';
 
 export interface TallyViewModel {
@@ -16,12 +16,17 @@ interface SchemaCardProps {
 }
 
 export function SchemaCard({ tally, onPress }: SchemaCardProps) {
+  const theme = useTheme();
+
   return (
-    <Surface style={styles.horizontalCard} elevation={1}>
+    <Surface
+      style={[styles.horizontalCard, { backgroundColor: theme.colors.elevation.level1 }]}
+      elevation={1}
+    >
       <TouchableRipple
         style={styles.cardRipple}
         onPress={onPress}
-        rippleColor="rgba(0, 0, 0, .1)"
+        rippleColor={theme.colors.surfaceVariant}
       >
         <View style={styles.cardRow}>
           {/* Left Column: Name & Description */}
@@ -36,7 +41,7 @@ export function SchemaCard({ tally, onPress }: SchemaCardProps) {
 
           {/* Right Column: Count & Timestamp */}
           <View style={styles.rightCol}>
-            <Text variant="headlineMedium" style={styles.tallyCount}>
+            <Text variant="headlineMedium" style={[styles.tallyCount, { color: theme.colors.primary }]}>
               {tally.count}
             </Text>
             <Text variant="labelSmall" style={styles.lastRecorded}>
@@ -87,8 +92,8 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   lastRecorded: {
-    opacity: 0.4,
-    fontSize: 10,
+    opacity: 0.5,
+    fontSize: 11,
     marginTop: 1,
   },
 });

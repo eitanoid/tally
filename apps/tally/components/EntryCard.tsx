@@ -1,94 +1,134 @@
 // vi: set ts=2 sw=2
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Surface, Text, TouchableRipple } from 'react-native-paper';
-import { Schema } from '../generated/tally/v1/service_pb';
+import { Surface, Text, IconButton, Menu, useTheme } from 'react-native-paper';
+import { Entry } from '../generated/tally/v1/service_pb';
+import { formatCreatedAt } from '../src/utils/date';
 
-export interface TallyViewModel {
-  schema: Schema;
-  count: number;
-  lastRecordedAt: string;
+interface EntryCardProps {
+  entry: Entry;
+  onEdit?: (entry: Entry) => void;
+  onDelete?: (entry: Entry) => void;
 }
 
-interface SchemaCardProps {
-  tally: TallyViewModel;
-  onPress: () => void;
-  onQuickIncrement?: () => void;
-}
+export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
+  const theme = useTheme();
+  const [menuVisible, setMenuVisible] = useState(false);
 
-export function SchemaCard({ tally, onPress }: SchemaCardProps) {
+  let dataObj: Record<string, any> = {};
+  try {
+    dataObj = JSON.parse(entry.data || '{}');
+  } catch { }
+
+  const timeInfo = formatCreatedAt(entry.createdAt, entry.data);
+
   return (
-    <Surface style={styles.horizontalCard} elevation={1}>
-      <TouchableRipple
-        style={styles.cardRipple}
-        onPress={onPress}
-        rippleColor="rgba(0, 0, 0, .1)"
-      >
-        <View style={styles.cardRow}>
-          {/* Left Column: Name & Description */}
-          <View style={styles.leftCol}>
-            <Text variant="titleMedium" style={styles.tallyName} numberOfLines={1}>
-              {tally.schema.name}
-            </Text>
-            <Text variant="bodySmall" style={styles.tallyDescription} numberOfLines={1}>
-              {tally.schema.description || 'No description'}
-            </Text>
-          </View>
-
-          {/* Right Column: Count & Timestamp */}
-          <View style={styles.rightCol}>
-            <Text variant="headlineMedium" style={styles.tallyCount}>
-              {tally.count}
-            </Text>
-            <Text variant="labelSmall" style={styles.lastRecorded}>
-              {tally.lastRecordedAt}
-            </Text>
-          </View>
+    <Surface
+      style={[styles.entryCard, { backgroundColor: theme.colors.elevation.level1 }]}
+      elevation={1}
+    >
+      <View style={styles.entryHeader}>
+        <View style={styles.timestampContainer}>
+          <Text variant="labelSmall" style={[styles.timestampRelative, { color: theme.colors.primary }]}>
+            {timeInfo.relative}
+          </Text>
+          <Text variant="labelSmall" style={styles.timestampDot}>
+            •
+          </Text>
+          <Text variant="labelSmall" style={styles.timestampFormatted}>
+            {timeInfo.formatted}
+          </Text>
         </View>
-      </TouchableRipple>
+
+        {(onEdit || onDelete) && (
+          <Menu
+            visible={menuVisible}
+            onDismiss={() => setMenuVisible(false)}
+            anchor={
+              <IconButton
+                icon="dots-vertical"
+                size={18}
+                onPress={() => setMenuVisible(true)}
+              />
+            }
+          >
+            {onEdit && (
+              <Menu.Item
+                onPress={() => {
+                  setMenuVisible(false);
+                  onEdit(entry);
+                }}
+                title="Edit"
+                leadingIcon="pencil"
+              />
+            )}
+            {onDelete && (
+              <Menu.Item
+                onPress={() => {
+                  setMenuVisible(false);
+                  onDelete(entry);
+                }}
+                title="Delete"
+                leadingIcon="delete"
+              />
+            )}
+          </Menu>
+        )}
+      </View>
+
+      {Object.entries(dataObj).map(([key, val]) => (
+        <View key={key} style={styles.dataRow}>
+          <Text variant="bodyMedium" style={[styles.dataKey, { color: theme.colors.onSurface }]}>
+            {key}:
+          </Text>
+          <Text variant="bodyMedium" style={[styles.dataVal, { color: theme.colors.onSurfaceVariant }]}>
+            {String(val)}
+          </Text>
+        </View>
+      ))}
     </Surface>
   );
 }
 
 const styles = StyleSheet.create({
-  horizontalCard: {
-    marginBottom: 8,
+  entryCard: {
+    padding: 12,
     borderRadius: 8,
-    overflow: 'hidden',
+    marginBottom: 8,
   },
-  cardRipple: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  cardRow: {
+  entryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: -8,
   },
-  leftCol: {
+  timestampContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 8,
   },
-  rightCol: {
-    alignItems: 'flex-end',
-  },
-  tallyName: {
+  timestampRelative: {
     fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 20,
   },
-  tallyDescription: {
-    opacity: 0.6,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  tallyCount: {
-    fontWeight: 'bold',
-    fontSize: 22,
-    lineHeight: 26,
-  },
-  lastRecorded: {
+  timestampDot: {
+    marginHorizontal: 4,
     opacity: 0.4,
-    fontSize: 10,
-    marginTop: 1,
+  },
+  timestampFormatted: {
+    opacity: 0.5,
+  },
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
+  },
+  dataKey: {
+    fontWeight: '600',
+    marginRight: 6,
+  },
+  dataVal: {
+    opacity: 0.8,
   },
 });

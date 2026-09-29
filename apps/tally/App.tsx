@@ -1,6 +1,6 @@
 // vi: set ts=2 sw=2
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, useColorScheme, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
+import { StyleSheet, View, ScrollView, useColorScheme, ActivityIndicator, BackHandler } from 'react-native';
 import { StatusBar } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -14,6 +14,7 @@ import {
   Button,
   IconButton,
   Menu,
+  useTheme,
 } from 'react-native-paper';
 
 import {
@@ -21,6 +22,7 @@ import {
   listSchemas,
   createSchema,
   listEntries,
+  recordEntry,
 } from './modules/tally-backend';
 import {
   ResponseCode,
@@ -29,6 +31,7 @@ import {
 
 import { SchemaCard, TallyViewModel } from './components/SchemaCard';
 import { SchemaCreateModal, DynamicField } from './components/SchemaCreateModal';
+import { DynamicEntryFormModal } from './components/DynamicEntryFormModal';
 import { SchemaDetailScreen } from './screens/schemaDetailScreen';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
@@ -73,7 +76,10 @@ export default function App(): React.JSX.Element {
     <ThemeContext.Provider value={{ themeMode, setThemeMode }}>
       <SafeAreaProvider>
         <PaperProvider theme={activeTheme}>
-          <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+          <StatusBar
+            barStyle={isDark ? 'light-content' : 'dark-content'}
+            backgroundColor={activeTheme.colors.background}
+          />
           <MainAppRouter />
         </PaperProvider>
       </SafeAreaProvider>
@@ -83,6 +89,7 @@ export default function App(): React.JSX.Element {
 
 function MainAppRouter() {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   const { themeMode, setThemeMode } = useContext(ThemeContext);
 
   // --- Router / Screen state ---
@@ -95,6 +102,8 @@ function MainAppRouter() {
 
   // --- UI Dialog & Menu States ---
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
+  const [recordModalVisible, setRecordModalVisible] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const [settingsDialogVisible, setSettingsDialogVisible] = useState(false);
   const [themeMenuVisible, setThemeMenuVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,6 +155,38 @@ function MainAppRouter() {
     }
   }, []);
 
+  // Hardware back button navigation on Android
+  useEffect(() => {
+    const onBackPress = () => {
+      if (recordModalVisible) {
+        setRecordModalVisible(false);
+        return true;
+      }
+      if (createDialogVisible) {
+        setCreateDialogVisible(false);
+        return true;
+      }
+      if (settingsDialogVisible) {
+        setSettingsDialogVisible(false);
+        return true;
+      }
+      if (selectedSchema) {
+        setSelectedSchema(null);
+        fetchTalliesFromBackend();
+        return true;
+      }
+      return false;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [
+    recordModalVisible,
+    createDialogVisible,
+    settingsDialogVisible,
+    selectedSchema,
+    fetchTalliesFromBackend,
+  ]);
+
   useEffect(() => {
     fetchTalliesFromBackend();
   }, [fetchTalliesFromBackend]);
@@ -183,6 +224,55 @@ function MainAppRouter() {
     }
   };
 
+  const handleOpenRecordEntryFlow = useCallback(() => {
+    setRecordModalVisible(true);
+  }, []);
+
+  const schemaList = useMemo(() => tallies.map((t) => t.schema), [tallies]);
+
+  const fabActions = useMemo(
+    () => [
+      {
+        icon: 'file-document-plus-outline',
+        label: 'New Tally',
+        onPress: () => setCreateDialogVisible(true),
+      },
+      {
+        icon: 'playlist-plus',
+        label: 'Record Entry',
+        onPress: handleOpenRecordEntryFlow,
+      },
+    ],
+    [handleOpenRecordEntryFlow]
+  );
+
+  const handleRecordEntrySubmit = async (
+    formData: Record<string, any>,
+    schema?: Schema
+  ) => {
+    if (!schema) return;
+    setIsSubmitting(true);
+    try {
+      const res = await recordEntry({
+        tallyId: schema.tallyId,
+        schemaVersion: schema.schemaVersion,
+        payloadJson: JSON.stringify(formData),
+      });
+
+      if (res.code !== ResponseCode.OK) {
+        throw new Error(res.errorMessage || 'Failed to record entry');
+      }
+
+      setRecordModalVisible(false);
+      await fetchTalliesFromBackend();
+    } catch (err: any) {
+      console.error('Record Entry Error:', err);
+      setErrorMsg(err.message || 'Failed to record entry');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getThemeIcon = () => {
     if (themeMode === 'light') return 'weather-sunny';
     if (themeMode === 'dark') return 'weather-night';
@@ -192,7 +282,16 @@ function MainAppRouter() {
   // Render Detail Screen if a schema is selected
   if (selectedSchema) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: theme.colors.background,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+          },
+        ]}
+      >
         <SchemaDetailScreen
           schema={selectedSchema}
           onBack={() => {
@@ -205,10 +304,29 @@ function MainAppRouter() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.colors.background,
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}
+    >
       {/* App Bar Header */}
-      <View style={styles.compactHeader}>
-        <Text style={styles.headerTitle}>Tally</Text>
+      <View
+        style={[
+          styles.compactHeader,
+          {
+            borderBottomColor: theme.colors.outlineVariant,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+          },
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: theme.colors.onBackground }]}>
+          Tally
+        </Text>
         <View style={styles.headerActions}>
           <Menu
             visible={themeMenuVisible}
@@ -298,11 +416,25 @@ function MainAppRouter() {
         )}
       </ScrollView>
 
-      {/* Create Tally FAB */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => setCreateDialogVisible(true)}
+      {/* Speed Dial Expanding FAB */}
+      <Portal>
+        <FAB.Group
+          open={fabOpen}
+          visible={!selectedSchema}
+          icon={fabOpen ? 'close' : 'plus'}
+          actions={fabActions}
+          onStateChange={({ open }) => setFabOpen(open)}
+        />
+      </Portal>
+
+      {/* Record Entry Modal with Schema Picker */}
+      <DynamicEntryFormModal
+        visible={recordModalVisible}
+        title="Record Entry"
+        schemas={schemaList}
+        onDismiss={() => setRecordModalVisible(false)}
+        onSubmit={handleRecordEntrySubmit}
+        isSubmitting={isSubmitting}
       />
 
       {/* Schema Creation Modal */}

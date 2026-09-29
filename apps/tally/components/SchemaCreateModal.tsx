@@ -7,12 +7,18 @@ import {
   TextInput,
   Button,
   Text,
-  SegmentedButtons,
   IconButton,
   Switch,
   Divider,
+  Menu,
+  useTheme,
 } from 'react-native-paper';
 import { FieldFormat } from '../generated/tally/v1/service_pb';
+import {
+  FIELD_FORMAT_OPTIONS,
+  getFieldFormatInfo,
+  type FieldFormatInfo,
+} from '../src/fields/fieldFormat';
 
 export interface DynamicField {
   id: string;
@@ -21,6 +27,8 @@ export interface DynamicField {
   format: FieldFormat;
   required: boolean;
 }
+
+export type { FieldFormatInfo };
 
 interface SchemaCreateModalProps {
   visible: boolean;
@@ -35,8 +43,10 @@ export function SchemaCreateModal({
   onSubmit,
   isSubmitting,
 }: SchemaCreateModalProps) {
+  const theme = useTheme();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [openMenuFieldId, setOpenMenuFieldId] = useState<string | null>(null);
   const [fields, setFields] = useState<DynamicField[]>([
     {
       id: '1',
@@ -105,66 +115,86 @@ export function SchemaCreateModal({
               </Button>
             </View>
 
-            {fields.map((field, index) => (
-              <View key={field.id} style={styles.fieldBlock}>
-                <View style={styles.fieldHeaderRow}>
-                  <Text variant="labelLarge" style={styles.fieldNumber}>
-                    Field #{index + 1}
-                  </Text>
-                  {fields.length > 1 && (
-                    <IconButton
-                      icon="delete-outline"
-                      size={18}
-                      iconColor="red"
-                      onPress={() => removeField(field.id)}
-                    />
-                  )}
-                </View>
+            {fields.map((field, index) => {
+              const currentOption = getFieldFormatInfo(field.format);
+              return (
+                <View key={field.id} style={styles.fieldBlock}>
+                  <View style={styles.fieldHeaderRow}>
+                    <Text variant="labelLarge" style={styles.fieldNumber}>
+                      Field #{index + 1}
+                    </Text>
+                    {fields.length > 1 && (
+                      <IconButton
+                        icon="delete-outline"
+                        size={18}
+                        iconColor="red"
+                        onPress={() => removeField(field.id)}
+                      />
+                    )}
+                  </View>
 
-                <TextInput
-                  label="Field Name *"
-                  value={field.name}
-                  onChangeText={(val) => updateField(field.id, { name: val })}
-                  mode="outlined"
-                  dense
-                  style={styles.input}
-                />
-                <TextInput
-                  label="Description"
-                  value={field.description}
-                  onChangeText={(val) => updateField(field.id, { description: val })}
-                  mode="outlined"
-                  dense
-                  style={styles.input}
-                />
-
-                <Text variant="bodySmall" style={{ marginBottom: 4 }}>
-                  Data Type:
-                </Text>
-                <SegmentedButtons
-                  value={field.format.toString()}
-                  onValueChange={(val) =>
-                    updateField(field.id, { format: Number(val) as FieldFormat })
-                  }
-                  density="high"
-                  style={{ marginBottom: 8 }}
-                  buttons={[
-                    { value: FieldFormat.INTEGER.toString(), label: 'Int' },
-                    { value: FieldFormat.STRING.toString(), label: 'String' },
-                    { value: FieldFormat.BOOLEAN.toString(), label: 'Bool' },
-                  ]}
-                />
-
-                <View style={styles.switchRow}>
-                  <Text variant="bodyMedium">Required Field</Text>
-                  <Switch
-                    value={field.required}
-                    onValueChange={(val) => updateField(field.id, { required: val })}
+                  <TextInput
+                    label="Field Name *"
+                    value={field.name}
+                    onChangeText={(val) => updateField(field.id, { name: val })}
+                    mode="outlined"
+                    dense
+                    style={styles.input}
                   />
+                  <TextInput
+                    label="Description"
+                    value={field.description}
+                    onChangeText={(val) => updateField(field.id, { description: val })}
+                    mode="outlined"
+                    dense
+                    style={styles.input}
+                  />
+
+                  <View style={styles.formatSelectorContainer}>
+                    <Text variant="bodySmall" style={styles.formatLabel}>
+                      Field Format:
+                    </Text>
+                    <Menu
+                      visible={openMenuFieldId === field.id}
+                      onDismiss={() => setOpenMenuFieldId(null)}
+                      anchor={
+                        <Button
+                          mode="outlined"
+                          onPress={() => setOpenMenuFieldId(field.id)}
+                          icon={currentOption.icon}
+                          contentStyle={styles.menuAnchorContent}
+                          style={[styles.menuAnchorButton, { borderColor: theme.colors.outline }]}
+                        >
+                          {currentOption.label} ({currentOption.description})
+                        </Button>
+                      }
+                    >
+                      {FIELD_FORMAT_OPTIONS.map((opt) => (
+                        <Menu.Item
+                          key={opt.value}
+                          onPress={() => {
+                            updateField(field.id, { format: opt.value });
+                            setOpenMenuFieldId(null);
+                          }}
+                          title={`${opt.label} (${opt.description})`}
+                          leadingIcon={opt.icon}
+                          trailingIcon={field.format === opt.value ? 'check' : undefined}
+                        />
+                      ))}
+                    </Menu>
+                  </View>
+
+                  <View style={styles.switchRow}>
+                    <Text variant="bodyMedium">Required Field</Text>
+                    <Switch
+                      value={field.required}
+                      onValueChange={(val) => updateField(field.id, { required: val })}
+                    />
+                  </View>
+                  <Divider style={{ marginTop: 12 }} />
                 </View>
-                <Divider style={{ marginTop: 12 }} />
-              </View>
-            ))}
+              );
+            })}
           </ScrollView>
         </Dialog.ScrollArea>
 
@@ -218,6 +248,20 @@ const styles = StyleSheet.create({
   fieldNumber: {
     opacity: 0.7,
     fontWeight: '600',
+  },
+  formatSelectorContainer: {
+    marginBottom: 8,
+  },
+  formatLabel: {
+    marginBottom: 4,
+    opacity: 0.7,
+  },
+  menuAnchorButton: {
+    width: '100%',
+    borderColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  menuAnchorContent: {
+    justifyContent: 'flex-start',
   },
   switchRow: {
     flexDirection: 'row',
