@@ -18,6 +18,12 @@ clean:
     set working-directory = {{ mod_dir }}
     cd android && ./gradlew clean --stop
 
+doctor:
+    npx expo doctor
+
+build-apk:
+    npx eas-cli build --platform android --profile development --local
+
 adb:
     @echo 'to paid a phone run:'
     @echo 'adb pair <ip>:<port>'
