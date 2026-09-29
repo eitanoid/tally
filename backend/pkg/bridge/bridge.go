@@ -118,6 +118,8 @@ func ListEntries(requestBytes []byte) []byte {
 			TallyId:       e.TallyID,
 			SchemaVersion: int32(e.SchemaVersion),
 			Data:          e.Data,
+			CreatedAt:     timestamppb.New(e.CreatedAt),
+			UpdatedAt:     timestamppb.New(e.UpdatedAt),
 		})
 	}
 
