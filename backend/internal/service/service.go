@@ -22,6 +22,10 @@ func NewTallyService(repo repository.Repository) *TallyService {
 	}
 }
 
+func (t *TallyService) Close() error {
+	return t.repo.Close()
+}
+
 // PaginatedResult represents a pagination collection of tally entries.
 type PaginatedResult struct {
 	Entries    []entries.TallyEntry `json:"entries"`
