@@ -137,6 +137,7 @@ declare class TallyBackendModule extends NativeModule<{}> {
 
 ```
 
+7. Implement the new function with the generated typescript proto stub:
 ```ts
 // apps/tally/modules/tally-backend/index.ts
 import { create, toBinary, fromBinary, type Init } from '@bufbuild/protobuf';
@@ -161,8 +162,6 @@ export async function newFeature(
 ## Future features / TODOs
 
 - full UI implementation:
-  - the current UI only has a single view, and supports listing schemas, and also creating a schema with a single entry. Not ideal.
-  - dynamic forms from the JSON schema e.g. using: [jsonschema-form](https://github.com/rjsf-team/react-jsonschema-form)
   - adding tests to typescript layer
   - adding end-to-end tests for Go backend
 - new backend features:
@@ -170,9 +169,16 @@ export async function newFeature(
     support for versioned schemas already exists but it needs more work. An
     open question is how to treat entries that belong to an old schema?
   - not sure how to do this, but support for local DB backups in android
+  - support soft deletes for entries and schemas
+  - rename schema name to tally name in UI
+  - transform and download CSV with `expo-sharing` and `expo-file-system`
+  - sort by name, created by changed at etc in schema view
+  - use schema in entry card to provide correct field names and not just field keys
+  - figureout how to deterministically provide field ordering
+  - allow for 0 field schema creation in UI
 
 ## Acknowledgement
 
-- [https://medium.com/@ykanavalik/how-to-run-golang-code-in-your-react-native-android-application-using-expo-go-d4e46438b753]
-- [https://docs.expo.dev/modules/native-module-tutorial]
-- [https://github.com/siddarthkay/react-native-go/tree/master]
+- https://medium.com/@ykanavalik/how-to-run-golang-code-in-your-react-native-android-application-using-expo-go-d4e46438b753
+- https://docs.expo.dev/modules/native-module-tutorial
+- https://github.com/siddarthkay/react-native-go/tree/master
