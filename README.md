@@ -2,9 +2,13 @@
 
 Tally is a local, schema-enforced personal data engine for tracking literally anything.
 
-Define custom JSON schemas once, then log structured, validated data effortlessly with confidence.
+UI: Expo (React Native) + react-native-paper
+Backend: Go + SQLite, compiled into native libraries via gomobile
+Bridge: Binary Protobuf over FFI (Kotlin JNI for Android)
 
-## CLI demo:
+<detials>
+<summary><h3>CLI demo<\h3></summary>
+
 ```sh
 $ tally schema list
 > No tally schemas found.
@@ -57,11 +61,13 @@ $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
 > 3JyNe04LnhADzOT2Y1SspRXGmHh   v1        2026-09-28T21:03:59Z   -                      {"book":"The Stranger", "pages": 20, "time":"2026-09-28T22:03:59+01:00"}
 ```
 
-## Expansion details
+<\details>
 
-UI: Expo (React Native) + react-native-paper
-Backend: Go + SQLite, compiled into native libraries via gomobile
-Bridge: Binary Protobuf over FFI (Kotlin JNI for Android / Swift for iOS)
+
+<details>
+<summary><h3>Expansion Details<\h3></summary>
+
+To expand the featureset of the app (from the backend), these are the required steps:
 
 1 .Define your new request and response payloads in service.proto:
 ```proto
@@ -150,19 +156,23 @@ export async function newFeature(
   return fromBinary(NewFeatureResponseSchema, respBytes);
 }
 ```
+<\details>
 
+## Future features / TODOs
 
+- full UI implementation:
+  - the current UI only has a single view, and supports listing schemas, and also creating a schema with a single entry. Not ideal.
+  - dynamic forms from the JSON schema e.g. using: [jsonschema-form](https://github.com/rjsf-team/react-jsonschema-form)
+  - adding tests to typescript layer
+  - adding end-to-end tests for Go backend
+- new backend features:
+  - users should be able to edit the fields in a Tally after creating it. The
+    support for versioned schemas already exists but it needs more work. An
+    open question is how to treat entries that belong to an old schema?
+  - not sure how to do this, but support for local DB backups in android
 
-Features:
-- Create a new habit with a row schema (eg. Medicine: name string, dose-mg int, time timestamp)
-- Add a new entry to the habit following the schema
-- Browse your habit entries
+## Acknowledgement
 
-Technical details:
-
-- golang app deployed to android (with potentially a different frontend later?)
-- go migrate and a sqlite3 driver for go avoiding CGO
-
-2 tables in one sqlite database
-- `entries` where each habit is stored and contains a json schema
-- `habits` where each entry is associated to an entry in schemas and acocmpanies a body object as well as a creation timestamp
+- [https://medium.com/@ykanavalik/how-to-run-golang-code-in-your-react-native-android-application-using-expo-go-d4e46438b753]
+- [https://docs.expo.dev/modules/native-module-tutorial]
+- [https://github.com/siddarthkay/react-native-go/tree/master]
