@@ -16,3 +16,6 @@ android {
     abortOnError false
   }
 }
+dependencies {
+  implementation files('src/libs/tally.aar')
+}
