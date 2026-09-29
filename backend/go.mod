@@ -3,6 +3,7 @@ module github.com/eitanoid/tally
 go 1.26.3
 
 require (
+	github.com/evanphx/json-patch/v5 v5.9.11
 	github.com/google/jsonschema-go v0.4.3
 	github.com/ncruces/go-sqlite3 v0.35.6
 	github.com/segmentio/ksuid v1.0.4
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/ncruces/go-sqlite3-wasm/v6 v6.3.35304 // indirect
 	github.com/ncruces/julianday v1.0.0 // indirect

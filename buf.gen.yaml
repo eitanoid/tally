@@ -2,5 +2,9 @@ version: v2
 managed:
   enabled: true
 plugins:
-  - remote: buf.build/protocolbuffers/go
+  - remote: buf.build/protocolbuffers/go:v1.36.12
     out: backend/generated
+  - remote: buf.build/bufbuild/es:v2.15.0
+    out: apps/tally/generated
+    opt:
+      - target=ts

@@ -1,3 +1,4 @@
+// vi: set ts=2 sw=2
 import React, { useState, createContext, useContext } from 'react';
 import { StyleSheet, View, ScrollView, useColorScheme } from 'react-native';
 import { StatusBar } from 'react-native';
@@ -20,6 +21,7 @@ import {
   IconButton,
   Menu,
 } from 'react-native-paper';
+import './generated/tally/v1/service_pb.ts';
 
 // --- Types ---
 type ThemeMode = 'light' | 'dark' | 'auto';
@@ -57,7 +59,7 @@ const ThemeContext = createContext<{
   setThemeMode: (mode: ThemeMode) => void;
 }>({
   themeMode: 'auto',
-  setThemeMode: () => {},
+  setThemeMode: () => { },
 });
 
 export default function App(): React.JSX.Element {
@@ -75,7 +77,6 @@ export default function App(): React.JSX.Element {
         <PaperProvider theme={activeTheme}>
           <StatusBar
             barStyle={isDark ? 'light-content' : 'dark-content'}
-            backgroundColor={activeTheme.colors.surface}
           />
           <MainAppContent />
         </PaperProvider>
@@ -92,7 +93,7 @@ function MainAppContent() {
   const [tallies, setTallies] = useState<Tally[]>([
     {
       id: '1',
-      name: 'Water',
+      name: 'Water 2',
       description: 'Daily glass count',
       count: 4,
       lastRecordedAt: '10 mins ago',
