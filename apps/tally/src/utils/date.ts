@@ -6,34 +6,64 @@ export interface FormattedTimestamp {
 }
 
 export function formatCreatedAt(
-  createdAt?: { seconds?: bigint | number | string; nanos?: number } | string | null,
+  createdAt?: any,
   fallbackData?: string | Record<string, any>
 ): FormattedTimestamp {
   let ms: number | null = null;
 
-  // 1. Try protobuf Timestamp
-  if (
-    createdAt &&
-    typeof createdAt === 'object' &&
-    'seconds' in createdAt &&
-    createdAt.seconds !== undefined &&
-    createdAt.seconds !== null
-  ) {
-    const sec =
-      typeof createdAt.seconds === 'bigint'
-        ? Number(createdAt.seconds)
-        : Number(createdAt.seconds);
-    if (!isNaN(sec) && sec > 0) {
-      ms = sec * 1000 + (createdAt.nanos ? Math.floor(Number(createdAt.nanos) / 1e6) : 0);
+  if (createdAt !== null && createdAt !== undefined) {
+    // A. Plain number (Unix timestamp in milliseconds or seconds)
+    if (typeof createdAt === 'number') {
+      if (createdAt > 1e11) {
+        ms = createdAt;
+      } else if (createdAt > 0) {
+        ms = createdAt * 1000;
+      }
     }
-  } else if (typeof createdAt === 'string' && createdAt.trim().length > 0) {
-    const parsed = Date.parse(createdAt);
-    if (!isNaN(parsed) && parsed > 0) {
-      ms = parsed;
+    // B. BigInt (Unix timestamp in seconds or milliseconds)
+    else if (typeof createdAt === 'bigint') {
+      const num = Number(createdAt);
+      if (num > 1e11) {
+        ms = num;
+      } else if (num > 0) {
+        ms = num * 1000;
+      }
+    }
+    // C. Protobuf Timestamp object or WKT representation ({ seconds, nanos } or toDate() method)
+    else if (typeof createdAt === 'object') {
+      if (typeof createdAt.toDate === 'function') {
+        try {
+          const d = createdAt.toDate();
+          if (d instanceof Date && !isNaN(d.getTime())) {
+            ms = d.getTime();
+          }
+        } catch { }
+      }
+
+      if (ms === null && ('seconds' in createdAt || 'seconds_' in createdAt)) {
+        const rawSec = createdAt.seconds ?? createdAt.seconds_;
+        const rawNanos = createdAt.nanos ?? createdAt.nanos_ ?? 0;
+        const sec = typeof rawSec === 'bigint' ? Number(rawSec) : Number(rawSec);
+        if (!isNaN(sec) && sec > 0) {
+          ms = sec * 1000 + Math.floor(Number(rawNanos) / 1e6);
+        }
+      }
+    }
+    // D. ISO string / RFC3339 / SQLite datetime string (e.g. "2026-09-29 18:00:00" or "2026-09-29T18:00:00Z")
+    else if (typeof createdAt === 'string' && createdAt.trim().length > 0) {
+      const cleanStr = createdAt.trim();
+      // If sqlite format without 'T' or timezone (YYYY-MM-DD HH:MM:SS), normalize to ISO
+      const normalizedStr = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/.test(cleanStr)
+        ? `${cleanStr.replace(' ', 'T')}Z`
+        : cleanStr;
+      const parsed = Date.parse(normalizedStr);
+      if (!isNaN(parsed) && parsed > 0) {
+        ms = parsed;
+      }
     }
   }
 
-  // 2. Fallback: check fields in entry.data (e.g. date-time, date, or timestamp fields)
+  // Fallback: check inside fallbackData JSON for any timestamp/date fields
   if (ms === null && fallbackData) {
     try {
       const dataObj =
@@ -48,7 +78,11 @@ export function formatCreatedAt(
       ];
       for (const f of possibleDateFields) {
         if (dataObj[f]) {
-          const parsed = Date.parse(String(dataObj[f]));
+          const raw = String(dataObj[f]);
+          const normalized = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/.test(raw)
+            ? `${raw.replace(' ', 'T')}Z`
+            : raw;
+          const parsed = Date.parse(normalized);
           if (!isNaN(parsed) && parsed > 0) {
             ms = parsed;
             break;
@@ -59,7 +93,7 @@ export function formatCreatedAt(
   }
 
   if (ms === null || isNaN(ms) || ms <= 0) {
-    return { relative: 'Recent', formatted: 'Recorded' };
+    return { relative: 'Recent', formatted: 'Recent' };
   }
 
   const date = new Date(ms);

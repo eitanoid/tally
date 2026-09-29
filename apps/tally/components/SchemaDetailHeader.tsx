@@ -1,6 +1,7 @@
 // vi: set ts=2 sw=2
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, IconButton, SegmentedButtons, Surface, useTheme } from 'react-native-paper';
+import { Text, IconButton, SegmentedButtons, Surface, Menu, useTheme } from 'react-native-paper';
 import { Schema } from '../generated/tally/v1/service_pb';
 
 interface SchemaDetailHeaderProps {
@@ -9,6 +10,8 @@ interface SchemaDetailHeaderProps {
   viewMode: 'cards' | 'table';
   onViewModeChange: (mode: 'cards' | 'table') => void;
   onBack: () => void;
+  onExportData?: () => void;
+  onDeleteSchema?: () => void;
 }
 
 export function SchemaDetailHeader({
@@ -17,17 +20,22 @@ export function SchemaDetailHeader({
   viewMode,
   onViewModeChange,
   onBack,
+  onExportData,
+  onDeleteSchema,
 }: SchemaDetailHeaderProps) {
   const theme = useTheme();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   return (
     <View style={styles.container}>
-      {/* Top App Bar with back navigation and view switcher */}
+      {/* Top App Bar with back navigation, view switcher, and 3-dot menu */}
       <View style={[styles.appBar, { borderBottomColor: theme.colors.outlineVariant }]}>
         <IconButton icon="arrow-left" onPress={onBack} size={24} style={styles.backButton} />
         <Text variant="titleMedium" numberOfLines={1} style={styles.appBarTitle}>
           {schema.name}
         </Text>
+
+        {/* View Switcher (moved left to accommodate 3-dot menu) */}
         <View style={styles.toggleContainer}>
           <SegmentedButtons
             value={viewMode}
@@ -48,6 +56,37 @@ export function SchemaDetailHeader({
             ]}
           />
         </View>
+
+        {/* 3-Dot Actions Menu */}
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          anchor={
+            <IconButton
+              icon="dots-vertical"
+              size={22}
+              onPress={() => setMenuVisible(true)}
+              style={styles.menuAnchor}
+            />
+          }
+        >
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              onExportData?.();
+            }}
+            title="Export Data"
+            leadingIcon="export-variant"
+          />
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              onDeleteSchema?.();
+            }}
+            title="Delete"
+            leadingIcon="delete-outline"
+          />
+        </Menu>
       </View>
 
       {/* Header Metadata section: Name, Description, Total Entry Count */}
@@ -83,7 +122,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 4,
-    paddingRight: 12,
+    paddingRight: 4,
     minHeight: 56,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -94,18 +133,22 @@ const styles = StyleSheet.create({
   appBarTitle: {
     flex: 1,
     fontWeight: '700',
-    marginRight: 12,
+    marginRight: 8,
   },
   toggleContainer: {
-    width: 108,
+    width: 104,
     flexShrink: 0,
+    marginRight: 2,
   },
   segmentedButtons: {
-    width: 108,
+    width: 104,
   },
   segmentBtn: {
-    minWidth: 46,
+    minWidth: 44,
     paddingHorizontal: 0,
+  },
+  menuAnchor: {
+    margin: 0,
   },
   metadataCard: {
     marginHorizontal: 12,

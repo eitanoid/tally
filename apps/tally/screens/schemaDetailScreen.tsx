@@ -100,6 +100,16 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     console.log('Delete entry requested for:', entry.entryId);
   };
 
+  const handleExportData = () => {
+    // Export data formatting
+    console.log('Export data requested for schema:', schema.name, entries);
+  };
+
+  const handleDeleteSchema = () => {
+    // Schema deletion flow
+    console.log('Delete schema requested for:', schema.tallyId);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header Bar and Metadata Summary */}
@@ -109,6 +119,8 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onBack={onBack}
+        onExportData={handleExportData}
+        onDeleteSchema={handleDeleteSchema}
       />
 
       {/* Main Content */}
