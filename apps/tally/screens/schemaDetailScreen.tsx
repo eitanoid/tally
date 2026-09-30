@@ -277,7 +277,7 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
       {/* Delete Schema Confirmation Dialog */}
       <DeleteConfirmationDialog
         visible={deleteSchemaDialogOpen}
-        title="Delete Tally Schema"
+        title="Delete Tally"
         itemName={schema.name}
         message="Are you sure you want to delete this tally? All recorded entries associated with it will also be permanently deleted."
         confirmLabel="Delete Tally"

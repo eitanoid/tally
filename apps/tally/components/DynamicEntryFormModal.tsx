@@ -88,7 +88,7 @@ export function DynamicEntryFormModal({
 
     if (!parsedSchema) {
       if (!activeSchema && schemas.length > 0) {
-        setErrors({ _schema: 'Please select a tally schema first' });
+        setErrors({ _schema: 'Please select a tally first' });
       }
       return;
     }

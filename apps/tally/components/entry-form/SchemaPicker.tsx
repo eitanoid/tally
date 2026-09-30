@@ -39,7 +39,7 @@ export function SchemaPicker({
     return (
       <View style={styles.emptyNotice}>
         <Text variant="bodyMedium" style={{ opacity: 0.6 }}>
-          No tally schemas available. Please create a schema first.
+          No tallies available. Please create one first.
         </Text>
       </View>
     );
@@ -48,7 +48,7 @@ export function SchemaPicker({
   return (
     <View style={styles.pickerContainer}>
       <Text variant="labelSmall" style={styles.headerLabel}>
-        Tally Schema:
+        Tally:
       </Text>
       <Menu
         visible={menuVisible}
@@ -61,7 +61,7 @@ export function SchemaPicker({
             contentStyle={styles.menuAnchorContent}
             style={[styles.menuAnchorButton, { borderColor: theme.colors.outline }]}
           >
-            {selectedSchema?.name || 'Select a Tally Schema...'}
+            {selectedSchema?.name || 'Select a Tally...'}
           </Button>
         }
       >

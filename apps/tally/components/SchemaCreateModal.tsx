@@ -78,7 +78,7 @@ export function SchemaCreateModal({
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
-        <Dialog.Title>Create Tally Schema</Dialog.Title>
+        <Dialog.Title>Create Tally</Dialog.Title>
         <Dialog.ScrollArea style={styles.scrollArea}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <TextInput
