@@ -1,9 +1,9 @@
 // vi: set ts=2 sw=2
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, ActivityIndicator, BackHandler } from 'react-native';
+import { StyleSheet, View, ScrollView, ActivityIndicator, BackHandler, Alert } from 'react-native';
 import { Text, FAB, Button, useTheme } from 'react-native-paper';
-import { Schema, Entry } from '../generated/tally/v1/service_pb';
-import { listEntries, recordEntry } from '../modules/tally-backend';
+import { Schema, Entry, ResponseCode } from '../generated/tally/v1/service_pb';
+import { listEntries, recordEntry, updateEntry, deleteEntry, deleteTally } from '../modules/tally-backend';
 import { DynamicEntryFormModal } from '../components/DynamicEntryFormModal';
 import { SchemaDetailHeader } from '../components/SchemaDetailHeader';
 import { EntryCard } from '../components/EntryCard';
@@ -74,17 +74,31 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
   const handleRecordOrUpdate = async (formData: Record<string, any>) => {
     setIsSubmitting(true);
     try {
-      await recordEntry({
-        tallyId: schema.tallyId,
-        schemaVersion: schema.schemaVersion,
-        payloadJson: JSON.stringify(formData),
-      });
+      if (selectedEntry) {
+        const res = await updateEntry({
+          entryId: selectedEntry.entryId,
+          patchData: JSON.stringify(formData),
+        });
+        if (res.code !== ResponseCode.OK) {
+          throw new Error(res.errorMessage || 'Failed to update entry');
+        }
+      } else {
+        const res = await recordEntry({
+          tallyId: schema.tallyId,
+          schemaVersion: schema.schemaVersion,
+          payloadJson: JSON.stringify(formData),
+        });
+        if (res.code !== ResponseCode.OK) {
+          throw new Error(res.errorMessage || 'Failed to record entry');
+        }
+      }
 
       setFormModalVisible(false);
       setSelectedEntry(null);
       await fetchEntries();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to submit entry:', err);
+      Alert.alert('Error', err.message || 'Failed to submit entry');
     } finally {
       setIsSubmitting(false);
     }
@@ -95,9 +109,19 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     setFormModalVisible(true);
   };
 
-  const handleDeleteEntry = (entry: Entry) => {
-    // Reserved for future delete entry endpoint
-    console.log('Delete entry requested for:', entry.entryId);
+  const handleDeleteEntry = async (entry: Entry) => {
+    try {
+      const res = await deleteEntry({
+        entryId: entry.entryId,
+      });
+      if (res.code !== ResponseCode.OK) {
+        throw new Error(res.errorMessage || 'Failed to delete entry');
+      }
+      await fetchEntries();
+    } catch (error: any) {
+      console.error('Failed to delete entry for', error);
+      Alert.alert('Error', error.message || 'Failed to delete entry');
+    }
   };
 
   const handleExportData = () => {
@@ -105,9 +129,19 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     console.log('Export data requested for schema:', schema.name, entries);
   };
 
-  const handleDeleteSchema = () => {
-    // Schema deletion flow
-    console.log('Delete schema requested for:', schema.tallyId);
+  const handleDeleteSchema = async () => {
+    try {
+      const res = await deleteTally({
+        tallyId: schema.tallyId,
+      });
+      if (res.code !== ResponseCode.OK) {
+        throw new Error(res.errorMessage || 'Failed to delete tally');
+      }
+      onBack();
+    } catch (error: any) {
+      console.error('Failed to delete schema:', error);
+      Alert.alert('Error', error.message || 'Failed to delete schema');
+    }
   };
 
   return (

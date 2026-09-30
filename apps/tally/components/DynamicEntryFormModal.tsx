@@ -1,5 +1,5 @@
 // vi: set ts=2 sw=2
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import { Dialog, Portal, Button } from 'react-native-paper';
 import { Schema } from '../generated/tally/v1/service_pb';
@@ -30,33 +30,35 @@ export function DynamicEntryFormModal({
   onSubmit,
   isSubmitting,
 }: DynamicEntryFormModalProps) {
-  const [selectedSchema, setSelectedSchema] = useState<Schema | null>(schema);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [selectedSchema, setSelectedSchema] = useState<Schema | null>(
+    schema || (schemas.length > 0 ? schemas[0] : null)
+  );
+  const [formData, setFormData] = useState<Record<string, any>>(initialData || {});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const prevVisibleRef = useRef(false);
 
   const isLocked = lockSchema || Boolean(schema && (!schemas || schemas.length <= 1));
 
-  // Reset form and sync schema strictly when visibility opens
+  // Sync schema and form data whenever visible opens or schema/initialData changes
   useEffect(() => {
-    if (!prevVisibleRef.current && visible) {
-      const active = schema || (schemas && schemas.length > 0 ? schemas[0] : null);
+    if (visible) {
+      const active = schema || selectedSchema || (schemas.length > 0 ? schemas[0] : null);
       setSelectedSchema(active);
-      setFormData(initialData || {});
+      setFormData(initialData ? { ...initialData } : {});
       setErrors({});
     }
-    prevVisibleRef.current = visible;
-  }, [visible]);
+  }, [visible, schema?.tallyId, initialData]);
 
-  // If a locked schema prop changes while open, sync selectedSchema
+  // If schemas list loads asynchronously while modal is open without a selection, select the first schema
   useEffect(() => {
-    if (schema) {
-      setSelectedSchema(schema);
+    if (!selectedSchema && !schema && schemas.length > 0) {
+      setSelectedSchema(schemas[0]);
     }
-  }, [schema?.tallyId]);
+  }, [schemas, selectedSchema, schema]);
 
-  // Derive parsed JSON Schema synchronously from the active raw schema string
-  const currentRawSchema = selectedSchema?.jsonSchema || schema?.jsonSchema || jsonSchemaRaw;
+  // Derive active schema string and parsed JSON Schema
+  const currentRawSchema =
+    selectedSchema?.jsonSchema || schema?.jsonSchema || jsonSchemaRaw;
+
   const parsedSchema = useMemo<ParsedJsonSchema | null>(() => {
     if (!currentRawSchema) return null;
     try {
@@ -80,9 +82,11 @@ export function DynamicEntryFormModal({
     setErrors({});
   };
 
-  const handleValidationAndSubmit = () => {
+  const handleValidationAndSubmit = async () => {
+    const activeSchema = schema || selectedSchema;
+
     if (!parsedSchema) {
-      if (!selectedSchema && schemas.length > 0) {
+      if (!activeSchema && schemas.length > 0) {
         setErrors({ _schema: 'Please select a tally schema first' });
       }
       return;
@@ -98,19 +102,29 @@ export function DynamicEntryFormModal({
       return;
     }
 
-    onSubmit(data, selectedSchema || undefined);
+    try {
+      await onSubmit(data, activeSchema || undefined);
+    } catch (err) {
+      console.error('Submit entry error in modal:', err);
+    }
   };
+
+  const activeSchema = schema || selectedSchema;
+  const isSaveDisabled = isSubmitting || (!activeSchema && !parsedSchema);
 
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
         <Dialog.Title>{title}</Dialog.Title>
         <Dialog.ScrollArea style={styles.scrollArea}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
             {/* Schema Selector or Locked Schema Display */}
             <SchemaPicker
               schemas={schemas}
-              selectedSchema={selectedSchema}
+              selectedSchema={activeSchema}
               isLocked={isLocked}
               onSelectSchema={handleSelectSchema}
               error={errors._schema}
@@ -143,7 +157,7 @@ export function DynamicEntryFormModal({
             mode="contained"
             onPress={handleValidationAndSubmit}
             loading={isSubmitting}
-            disabled={isSubmitting || (!selectedSchema && !parsedSchema)}
+            disabled={isSaveDisabled}
           >
             Save Entry
           </Button>
@@ -159,6 +173,7 @@ const styles = StyleSheet.create({
   },
   scrollArea: {
     paddingHorizontal: 0,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
