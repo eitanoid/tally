@@ -125,3 +125,17 @@ func (s *TallyService) UpdateEntry(ctx context.Context, entryID string, patchDat
 	}
 	return updatedEntry, nil
 }
+
+func (s *TallyService) DeleteEntry(ctx context.Context, entryID string) error {
+	if err := s.repo.DeleteEntry(ctx, entryID); err != nil {
+		return fmt.Errorf("failed to delete entry: %w ", err)
+	}
+	return nil
+}
+
+func (s *TallyService) DeleteTally(ctx context.Context, tallyID string) error {
+	if err := s.repo.DeleteTally(ctx, tallyID); err != nil {
+		return fmt.Errorf("failed to delete tally: %w ", err)
+	}
+	return nil
+}

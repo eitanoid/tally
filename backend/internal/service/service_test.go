@@ -392,3 +392,142 @@ func TestTallyService_UpdateEntry(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteEntry(t *testing.T) {
+	tests := []struct {
+		name    string
+		seedFn  func(ctx context.Context, svc *service.TallyService) string
+		wantErr bool
+	}{
+		{
+			name: "successfully soft-delete existing entry via service",
+			seedFn: func(ctx context.Context, svc *service.TallyService) string {
+				req := schemas.NewSchemaRequest("Habits", "Daily habit tracking")
+				_ = req.WithField("done", "", "boolean", true)
+				s, err := svc.CreateSchema(ctx, req)
+				if err != nil {
+					t.Fatalf("failed to seed schema: %v", err)
+				}
+
+				entry, err := svc.RecordEntry(ctx, s.TallyID, `{"done": true}`)
+				if err != nil {
+					t.Fatalf("failed to seed entry: %v", err)
+				}
+				return entry.ID
+			},
+			wantErr: false,
+		},
+		{
+			name: "error when attempting to delete non-existent entry",
+			seedFn: func(_ context.Context, _ *service.TallyService) string {
+				return "non-existent-entry-id"
+			},
+			wantErr: true,
+		},
+		{
+			name: "error on empty entry ID input validation",
+			seedFn: func(_ context.Context, _ *service.TallyService) string {
+				return "   "
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, _ := setupTestService(t)
+			ctx := context.Background()
+
+			entryID := tt.seedFn(ctx, svc)
+
+			err := svc.DeleteEntry(ctx, entryID)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("DeleteEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Verify entry is soft-deleted and unretrievable
+			if err == nil {
+				_, err := svc.UpdateEntry(ctx, entryID, `{"done": false}`)
+				if err == nil {
+					t.Errorf("expected UpdateEntry to fail on soft-deleted entry, got nil")
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteTally(t *testing.T) {
+	tests := []struct {
+		name    string
+		seedFn  func(ctx context.Context, svc *service.TallyService) (string, []string)
+		wantErr bool
+	}{
+		{
+			name: "successfully soft-delete tally and verify cascade",
+			seedFn: func(ctx context.Context, svc *service.TallyService) (string, []string) {
+				req := schemas.NewSchemaRequest("Water Log", "Track daily water intake")
+				_ = req.WithField("ml", "", "integer", true)
+				s, err := svc.CreateSchema(ctx, req)
+				if err != nil {
+					t.Fatalf("failed to seed schema: %v", err)
+				}
+
+				e1, err := svc.RecordEntry(ctx, s.TallyID, `{"ml": 250}`)
+				if err != nil {
+					t.Fatalf("failed to seed entry 1: %v", err)
+				}
+				e2, err := svc.RecordEntry(ctx, s.TallyID, `{"ml": 500}`)
+				if err != nil {
+					t.Fatalf("failed to seed entry 2: %v", err)
+				}
+
+				return s.TallyID, []string{e1.ID, e2.ID}
+			},
+			wantErr: false,
+		},
+		{
+			name: "error when soft-deleting non-existent tally",
+			seedFn: func(_ context.Context, _ *service.TallyService) (string, []string) {
+				return "00000000-0000-0000-0000-000000000000", nil
+			},
+			wantErr: true,
+		},
+		{
+			name: "error on empty tally ID input validation",
+			seedFn: func(_ context.Context, _ *service.TallyService) (string, []string) {
+				return "", nil
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, _ := setupTestService(t)
+			ctx := context.Background()
+
+			tallyID, entryIDs := tt.seedFn(ctx, svc)
+
+			err := svc.DeleteTally(ctx, tallyID)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("DeleteTally() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if err == nil {
+				// Assert schema is soft-deleted and no longer fetched as active schema
+				_, err := svc.GetLatestSchema(ctx, tallyID)
+				if err == nil {
+					t.Errorf("expected GetLatestSchema() to fail for soft-deleted tally, got nil")
+				}
+
+				// Assert child entries are inaccessible
+				for _, entryID := range entryIDs {
+					_, err := svc.UpdateEntry(ctx, entryID, `{"ml": 0}`)
+					if err == nil {
+						t.Errorf("expected entry %s to be soft-deleted, but update succeeded", entryID)
+					}
+				}
+			}
+		})
+	}
+}
