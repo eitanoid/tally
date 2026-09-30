@@ -22,12 +22,14 @@ type Repository interface {
 	GetLatestSchemaByID(ctx context.Context, tallyID string) (*schemas.TallySchema, error)
 	GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef) (*schemas.TallySchema, error)
 	GetAllLatestSchemas(ctx context.Context) ([]schemas.TallySchema, error)
+	DeleteTally(ctx context.Context, tallyID string) error
 
 	// Entry Operations
 	InsertEntry(ctx context.Context, entry *entries.TallyEntry) error
 	GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error)
 	GetEntryByID(ctx context.Context, entryID string) (*entries.TallyEntry, error)
 	UpdateEntryData(ctx context.Context, entry *entries.TallyEntry) error
+	DeleteEntry(ctx context.Context, entryID string) error
 
 	Close() error
 }

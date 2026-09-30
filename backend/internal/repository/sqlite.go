@@ -119,7 +119,7 @@ func (c *SQLiteClient) GetLatestSchemaByID(ctx context.Context, tallyID string) 
 	query := `
 		SELECT tally_id, version, name, description, json_schema, created_at
 		FROM tally_schemas
-		WHERE tally_id = ?
+		WHERE tally_id = ? AND deleted_at IS NULL
 		ORDER BY version DESC
 		LIMIT 1;
 	`
@@ -146,7 +146,7 @@ func (c *SQLiteClient) GetSchemaByRef(ctx context.Context, ref schemas.SchemaRef
 	query := `
 		SELECT tally_id, version, name, description, json_schema, created_at
 		FROM tally_schemas
-		WHERE tally_id = ? AND version = ?;
+		WHERE tally_id = ? AND version = ? AND deleted_at IS NULL;
 	`
 	var s schemas.TallySchema
 	err := c.db.QueryRowContext(ctx, query, ref.TallyID, ref.Version).Scan(
@@ -171,7 +171,7 @@ func (c *SQLiteClient) GetEntryByID(ctx context.Context, entryID string) (*entri
 	query := `
 		SELECT id, tally_id, schema_version, data, created_at, updated_at
 		FROM tally_entries
-		WHERE id = ?
+		WHERE id = ? AND deleted_at IS NULL
 		LIMIT 1;`
 	var e entries.TallyEntry
 	err := c.db.QueryRowContext(ctx, query, entryID).Scan(
@@ -229,7 +229,7 @@ func (c *SQLiteClient) GetAllLatestSchemas(ctx context.Context) ([]schemas.Tally
 			SELECT tally_id, MAX(version)
 			FROM tally_schemas
 			GROUP BY tally_id
-		)
+		) AND deleted_at IS NULL
 		ORDER BY name ASC;
 	`
 	rows, err := c.db.QueryContext(ctx, query)
@@ -286,7 +286,7 @@ func (c *SQLiteClient) InsertEntry(ctx context.Context, entry *entries.TallyEntr
 // GetEntriesByTallyID retrieves a paginated slice of entries alongside the total entry count.
 func (c *SQLiteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilter) ([]entries.TallyEntry, int, error) {
 	var totalCount int
-	countQuery := `SELECT COUNT(*) FROM tally_entries WHERE tally_id = ?`
+	countQuery := `SELECT COUNT(*) FROM tally_entries WHERE tally_id = ? AND deleted_at IS NULL`
 	if err := c.db.QueryRowContext(ctx, countQuery, filter.TallyID).Scan(&totalCount); err != nil {
 		return nil, 0, fmt.Errorf("failed to count entries: %w", err)
 	}
@@ -305,7 +305,7 @@ func (c *SQLiteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilt
 	query := `
 		SELECT id, tally_id, schema_version, data, created_at, updated_at
 		FROM tally_entries
-		WHERE tally_id = ?
+		WHERE tally_id = ? AND deleted_at IS NULL
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?;
 	`
@@ -331,4 +331,74 @@ func (c *SQLiteClient) GetEntriesByTallyID(ctx context.Context, filter EntryFilt
 	}
 
 	return result, totalCount, nil
+}
+
+// DeleteEntry soft-deletes an entry.
+func (c *SQLiteClient) DeleteEntry(ctx context.Context, entryID string) error {
+	now := time.Now()
+	nowStr := now.UTC().Format(time.RFC3339Nano)
+	query := `
+		UPDATE tally_entries 
+		SET deleted_at = ?
+		WHERE id = ? AND deleted_at IS NULL;
+	`
+	res, err := c.db.ExecContext(ctx, query, nowStr, entryID)
+	if err != nil {
+		return fmt.Errorf("failed to soft-delete tally entry %s: %w", entryID, err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("tally entry with id %s not found or already deleted", entryID)
+	}
+	return nil
+}
+
+// DeleteTally soft-deletes all schemas and entries with the tally ID.
+func (c *SQLiteClient) DeleteTally(ctx context.Context, tallyID string) error {
+	nowStr := time.Now().UTC().Format(time.RFC3339Nano)
+
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// soft-delete the parent schemas
+	const deleteSchemaQuery = `
+		UPDATE tally_schemas 
+		SET deleted_at = ?
+		WHERE tally_id = ? AND deleted_at IS NULL;
+	`
+	res, err := tx.ExecContext(ctx, deleteSchemaQuery, nowStr, tallyID)
+	if err != nil {
+		return fmt.Errorf("failed to soft-delete tally schema %s: %w", tallyID, err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check affected rows for tally schema %s: %w", tallyID, err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("tally schema with id %s not found or already deleted", tallyID)
+	}
+
+	// soft-delete child entries (0 entries deleted is acceptable)
+	const deleteEntriesQuery = `
+		UPDATE tally_entries 
+		SET deleted_at = ?
+		WHERE tally_id = ? AND deleted_at IS NULL;
+	`
+	if _, err := tx.ExecContext(ctx, deleteEntriesQuery, nowStr, tallyID); err != nil {
+		return fmt.Errorf("failed to soft-delete tally entries for %s: %w", tallyID, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit delete transaction for tally %s: %w", tallyID, err)
+	}
+
+	return nil
 }

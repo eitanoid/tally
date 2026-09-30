@@ -519,3 +519,162 @@ func TestUpdateEntryData(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteEntry(t *testing.T) {
+	tallyUUID := "550e8400-e29b-41d4-a716-446655440000"
+
+	tests := []struct {
+		name        string
+		seedEntries []*entries.TallyEntry
+		deleteID    string
+		wantErr     bool
+	}{
+		{
+			name: "successfully soft-deletes entry",
+			seedEntries: []*entries.TallyEntry{
+				{ID: "entry-1", TallyID: tallyUUID, SchemaVersion: 1, Data: `{}`},
+			},
+			deleteID: "entry-1",
+			wantErr:  false,
+		},
+		{
+			name:        "deleting non-existent entry returns error",
+			seedEntries: nil,
+			deleteID:    "non-existent-entry",
+			wantErr:     true,
+		},
+		{
+			name: "deleting already deleted entry returns error",
+			seedEntries: []*entries.TallyEntry{
+				{ID: "entry-2", TallyID: tallyUUID, SchemaVersion: 1, Data: `{}`},
+			},
+			deleteID: "entry-2",
+			wantErr:  true, // second delete attempt should fail with rows == 0
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := setupTestDB(t)
+			ctx := context.Background()
+
+			// Seed required schema
+			if err := client.InsertSchema(ctx, &schemas.TallySchema{
+				TallyID:       tallyUUID,
+				Version:       1,
+				Name:          "Test Tally",
+				JSONSchemaRaw: `{}`,
+			}); err != nil {
+				t.Fatalf("failed to seed schema: %v", err)
+			}
+
+			for _, e := range tt.seedEntries {
+				if err := client.InsertEntry(ctx, e); err != nil {
+					t.Fatalf("failed to seed entry: %v", err)
+				}
+			}
+
+			// Pre-delete step for the "already deleted" test case
+			if tt.name == "deleting already deleted entry returns error" {
+				if err := client.DeleteEntry(ctx, tt.deleteID); err != nil {
+					t.Fatalf("setup failed on initial delete: %v", err)
+				}
+			}
+
+			err := client.DeleteEntry(ctx, tt.deleteID)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("DeleteEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Verify entry is no longer retrievable if successfully deleted
+			if err == nil {
+				_, err := client.GetEntryByID(ctx, tt.deleteID)
+				if err == nil {
+					t.Errorf("expected GetEntryByID() to return error for soft-deleted entry, got nil")
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteTally(t *testing.T) {
+	tallyUUID := "550e8400-e29b-41d4-a716-446655440000"
+
+	tests := []struct {
+		name        string
+		seedSchema  bool
+		seedEntries []*entries.TallyEntry
+		deleteID    string
+		wantErr     bool
+	}{
+		{
+			name:       "successfully soft-deletes tally schema and child entries",
+			seedSchema: true,
+			seedEntries: []*entries.TallyEntry{
+				{ID: "entry-1", TallyID: tallyUUID, SchemaVersion: 1, Data: `{}`},
+				{ID: "entry-2", TallyID: tallyUUID, SchemaVersion: 1, Data: `{}`},
+			},
+			deleteID: tallyUUID,
+			wantErr:  false,
+		},
+		{
+			name:        "successfully soft-deletes tally schema with 0 child entries",
+			seedSchema:  true,
+			seedEntries: nil,
+			deleteID:    tallyUUID,
+			wantErr:     false,
+		},
+		{
+			name:        "deleting non-existent tally schema returns error",
+			seedSchema:  false,
+			seedEntries: nil,
+			deleteID:    "00000000-0000-0000-0000-000000000000",
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := setupTestDB(t)
+			ctx := context.Background()
+
+			if tt.seedSchema {
+				if err := client.InsertSchema(ctx, &schemas.TallySchema{
+					TallyID:       tallyUUID,
+					Version:       1,
+					Name:          "Test Tally",
+					JSONSchemaRaw: `{}`,
+				}); err != nil {
+					t.Fatalf("failed to seed schema: %v", err)
+				}
+			}
+
+			for _, e := range tt.seedEntries {
+				if err := client.InsertEntry(ctx, e); err != nil {
+					t.Fatalf("failed to seed entry: %v", err)
+				}
+			}
+
+			err := client.DeleteTally(ctx, tt.deleteID)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("DeleteTally() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Verify schema is no longer returned in active schema queries
+			if err == nil {
+				_, err := client.GetLatestSchemaByID(ctx, tt.deleteID)
+				if err == nil {
+					t.Errorf("expected GetLatestSchemaByID() to return error for soft-deleted tally, got nil")
+				}
+
+				// Verify associated entries are soft-deleted and unretrievable
+				for _, e := range tt.seedEntries {
+					_, err := client.GetEntryByID(ctx, e.ID)
+					if err == nil {
+						t.Errorf("expected GetEntryByID(%s) to fail after DeleteTally, got nil", e.ID)
+					}
+				}
+			}
+		})
+	}
+}

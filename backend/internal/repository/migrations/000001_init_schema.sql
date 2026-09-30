@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS tally_schemas (
     description TEXT DEFAULT '',
     json_schema JSON NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME DEFAULT NULL,
     PRIMARY KEY (tally_id, version),
     CONSTRAINT valid_json_schema CHECK (json_valid(json_schema))
 );
@@ -22,8 +23,9 @@ CREATE TABLE IF NOT EXISTS tally_entries (
     data JSON NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (tally_id, schema_version) 
-        REFERENCES tally_schemas(tally_id, version) 
+    deleted_at DATETIME DEFAULT NULL,
+    FOREIGN KEY (tally_id, schema_version)
+        REFERENCES tally_schemas(tally_id, version)
         ON DELETE CASCADE,
     CONSTRAINT valid_entry_data CHECK (json_valid(data))
 );
