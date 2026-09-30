@@ -110,7 +110,7 @@ export const deleteTally = createFFIHandler(
 export const listEntries = createFFIHandler(
     ListEntriesRequestSchema,
     ListEntriesResponseSchema,
-    TallyBackend.deleteTally
+    TallyBackend.listEntries
 );
 
 export default TallyBackend;
