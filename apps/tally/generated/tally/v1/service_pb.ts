@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file tally/v1/service.proto.
  */
 export const file_tally_v1_service: GenFile = /*@__PURE__*/
-  fileDesc("ChZ0YWxseS92MS9zZXJ2aWNlLnByb3RvEgh0YWxseS52MSKaAQoGU2NoZW1hEhAKCHRhbGx5X2lkGAEgASgJEhYKDnNjaGVtYV92ZXJzaW9uGAIgASgFEgwKBG5hbWUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSEwoLanNvbl9zY2hlbWEYBSABKAkSLgoKY3JlYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAisQEKBUVudHJ5EhAKCGVudHJ5X2lkGAEgASgJEhAKCHRhbGx5X2lkGAIgASgJEhYKDnNjaGVtYV92ZXJzaW9uGAMgASgFEgwKBGRhdGEYBCABKAkSLgoKY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiVAoSUmVjb3JkRW50cnlSZXF1ZXN0EhAKCHRhbGx5X2lkGAEgASgJEhYKDnNjaGVtYV92ZXJzaW9uGAIgASgFEhQKDHBheWxvYWRfanNvbhgDIAEoCSJkChNSZWNvcmRFbnRyeVJlc3BvbnNlEhAKCGVudHJ5X2lkGAEgASgJEiQKBGNvZGUYAiABKA4yFi50YWxseS52MS5SZXNwb25zZUNvZGUSFQoNZXJyb3JfbWVzc2FnZRgDIAEoCSJuChJTY2hlbWFSZXF1ZXN0RmllbGQSDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIjCgR0eXBlGAMgASgOMhUudGFsbHkudjEuRmllbGRGb3JtYXQSEAoIcmVxdWlyZWQYBCABKAgiZgoTQ3JlYXRlU2NoZW1hUmVxdWVzdBIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEiwKBmZpZWxkcxgDIAMoCzIcLnRhbGx5LnYxLlNjaGVtYVJlcXVlc3RGaWVsZCJ9ChRDcmVhdGVTY2hlbWFSZXNwb25zZRIQCgh0YWxseV9pZBgBIAEoCRIWCg5zY2hlbWFfdmVyc2lvbhgCIAEoBRIkCgRjb2RlGAMgASgOMhYudGFsbHkudjEuUmVzcG9uc2VDb2RlEhUKDWVycm9yX21lc3NhZ2UYBCABKAkiKgoWR2V0TGF0ZXN0U2NoZW1hUmVxdWVzdBIQCgh0YWxseV9pZBgBIAEoCSJ4ChdHZXRMYXRlc3RTY2hlbWFSZXNwb25zZRIgCgZzY2hlbWEYASABKAsyEC50YWxseS52MS5TY2hlbWESJAoEY29kZRgCIAEoDjIWLnRhbGx5LnYxLlJlc3BvbnNlQ29kZRIVCg1lcnJvcl9tZXNzYWdlGAMgASgJIhQKEkxpc3RTY2hlbWFzUmVxdWVzdCJ1ChNMaXN0U2NoZW1hc1Jlc3BvbnNlEiEKB3NjaGVtYXMYASADKAsyEC50YWxseS52MS5TY2hlbWESJAoEY29kZRgCIAEoDjIWLnRhbGx5LnYxLlJlc3BvbnNlQ29kZRIVCg1lcnJvcl9tZXNzYWdlGAMgASgJIkUKEkxpc3RFbnRyaWVzUmVxdWVzdBIQCgh0YWxseV9pZBgBIAEoCRINCgVsaW1pdBgCIAEoBRIOCgZvZmZzZXQYAyABKAUiugEKE0xpc3RFbnRyaWVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLnRhbGx5LnYxLkVudHJ5Eg0KBWxpbWl0GAIgASgFEg4KBm9mZnNldBgDIAEoBRITCgt0b3RhbF9jb3VudBgEIAEoBRIQCghoYXNfbW9yZRgFIAEoCBIkCgRjb2RlGAYgASgOMhYudGFsbHkudjEuUmVzcG9uc2VDb2RlEhUKDWVycm9yX21lc3NhZ2UYByABKAkq9AEKDFJlc3BvbnNlQ29kZRIdChlSRVNQT05TRV9DT0RFX1VOU1BFQ0lGSUVEEAASFAoQUkVTUE9OU0VfQ09ERV9PSxABEiEKHVJFU1BPTlNFX0NPREVfSU5WQUxJRF9QQVlMT0FEEAISGwoXUkVTUE9OU0VfQ09ERV9OT1RfRk9VTkQQAxIhCh1SRVNQT05TRV9DT0RFX0RVUExJQ0FURV9GSUVMRBAEEioKJlJFU1BPTlNFX0NPREVfU0NIRU1BX1ZBTElEQVRJT05fRkFJTEVEEAUSIAocUkVTUE9OU0VfQ09ERV9JTlRFUk5BTF9FUlJPUhAGKvYBCgtGaWVsZEZvcm1hdBIcChhGSUVMRF9GT1JNQVRfVU5TUEVDSUZJRUQQABIXChNGSUVMRF9GT1JNQVRfU1RSSU5HEAESGAoURklFTERfRk9STUFUX0lOVEVHRVIQAhIXChNGSUVMRF9GT1JNQVRfTlVNQkVSEAMSGAoURklFTERfRk9STUFUX0JPT0xFQU4QBBIaChZGSUVMRF9GT1JNQVRfREFURV9USU1FEAUSFQoRRklFTERfRk9STUFUX0RBVEUQBhIVChFGSUVMRF9GT1JNQVRfVElNRRAHEhkKFUZJRUxEX0ZPUk1BVF9EVVJBVElPThAIKh4KBUVycm9yEhUKEUVSUk9SX1VOU1BFQ0lGSUVEEABCaQoMY29tLnRhbGx5LnYxQgxTZXJ2aWNlUHJvdG9QAVoKcGIvdGFsbHl2MaICA1RYWKoCCFRhbGx5LlYxygIIVGFsbHlcVjHiAhRUYWxseVxWMVxHUEJNZXRhZGF0YeoCCVRhbGx5OjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("ChZ0YWxseS92MS9zZXJ2aWNlLnByb3RvEgh0YWxseS52MSKaAQoGU2NoZW1hEhAKCHRhbGx5X2lkGAEgASgJEhYKDnNjaGVtYV92ZXJzaW9uGAIgASgFEgwKBG5hbWUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSEwoLanNvbl9zY2hlbWEYBSABKAkSLgoKY3JlYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAisQEKBUVudHJ5EhAKCGVudHJ5X2lkGAEgASgJEhAKCHRhbGx5X2lkGAIgASgJEhYKDnNjaGVtYV92ZXJzaW9uGAMgASgFEgwKBGRhdGEYBCABKAkSLgoKY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiVAoSUmVjb3JkRW50cnlSZXF1ZXN0EhAKCHRhbGx5X2lkGAEgASgJEhYKDnNjaGVtYV92ZXJzaW9uGAIgASgFEhQKDHBheWxvYWRfanNvbhgDIAEoCSJkChNSZWNvcmRFbnRyeVJlc3BvbnNlEhAKCGVudHJ5X2lkGAEgASgJEiQKBGNvZGUYAiABKA4yFi50YWxseS52MS5SZXNwb25zZUNvZGUSFQoNZXJyb3JfbWVzc2FnZRgDIAEoCSJuChJTY2hlbWFSZXF1ZXN0RmllbGQSDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIjCgR0eXBlGAMgASgOMhUudGFsbHkudjEuRmllbGRGb3JtYXQSEAoIcmVxdWlyZWQYBCABKAgiZgoTQ3JlYXRlU2NoZW1hUmVxdWVzdBIMCgRuYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEiwKBmZpZWxkcxgDIAMoCzIcLnRhbGx5LnYxLlNjaGVtYVJlcXVlc3RGaWVsZCJ9ChRDcmVhdGVTY2hlbWFSZXNwb25zZRIQCgh0YWxseV9pZBgBIAEoCRIWCg5zY2hlbWFfdmVyc2lvbhgCIAEoBRIkCgRjb2RlGAMgASgOMhYudGFsbHkudjEuUmVzcG9uc2VDb2RlEhUKDWVycm9yX21lc3NhZ2UYBCABKAkiKgoWR2V0TGF0ZXN0U2NoZW1hUmVxdWVzdBIQCgh0YWxseV9pZBgBIAEoCSJ4ChdHZXRMYXRlc3RTY2hlbWFSZXNwb25zZRIgCgZzY2hlbWEYASABKAsyEC50YWxseS52MS5TY2hlbWESJAoEY29kZRgCIAEoDjIWLnRhbGx5LnYxLlJlc3BvbnNlQ29kZRIVCg1lcnJvcl9tZXNzYWdlGAMgASgJIhQKEkxpc3RTY2hlbWFzUmVxdWVzdCJ1ChNMaXN0U2NoZW1hc1Jlc3BvbnNlEiEKB3NjaGVtYXMYASADKAsyEC50YWxseS52MS5TY2hlbWESJAoEY29kZRgCIAEoDjIWLnRhbGx5LnYxLlJlc3BvbnNlQ29kZRIVCg1lcnJvcl9tZXNzYWdlGAMgASgJIkUKEkxpc3RFbnRyaWVzUmVxdWVzdBIQCgh0YWxseV9pZBgBIAEoCRINCgVsaW1pdBgCIAEoBRIOCgZvZmZzZXQYAyABKAUiugEKE0xpc3RFbnRyaWVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLnRhbGx5LnYxLkVudHJ5Eg0KBWxpbWl0GAIgASgFEg4KBm9mZnNldBgDIAEoBRITCgt0b3RhbF9jb3VudBgEIAEoBRIQCghoYXNfbW9yZRgFIAEoCBIkCgRjb2RlGAYgASgOMhYudGFsbHkudjEuUmVzcG9uc2VDb2RlEhUKDWVycm9yX21lc3NhZ2UYByABKAkiOgoSVXBkYXRlRW50cnlSZXF1ZXN0EhAKCHRhbGx5X2lkGAEgASgJEhIKCnBhdGNoX2RhdGEYAiABKAkiegoTVXBkYXRlRW50cnlSZXNwb25zZRImCg11cGRhdGVkX2VudHJ5GAEgASgLMg8udGFsbHkudjEuRW50cnkSJAoEY29kZRgGIAEoDjIWLnRhbGx5LnYxLlJlc3BvbnNlQ29kZRIVCg1lcnJvcl9tZXNzYWdlGAcgASgJIiYKEkRlbGV0ZVRhbGx5UmVxdWVzdBIQCgh0YWxseV9pZBgBIAEoCSJSChNEZWxldGVUYWxseVJlc3BvbnNlEiQKBGNvZGUYBiABKA4yFi50YWxseS52MS5SZXNwb25zZUNvZGUSFQoNZXJyb3JfbWVzc2FnZRgHIAEoCSImChJEZWxldGVFbnRyeVJlcXVlc3QSEAoIZW50cnlfaWQYASABKAkiUgoTRGVsZXRlRW50cnlSZXNwb25zZRIkCgRjb2RlGAYgASgOMhYudGFsbHkudjEuUmVzcG9uc2VDb2RlEhUKDWVycm9yX21lc3NhZ2UYByABKAkq9AEKDFJlc3BvbnNlQ29kZRIdChlSRVNQT05TRV9DT0RFX1VOU1BFQ0lGSUVEEAASFAoQUkVTUE9OU0VfQ09ERV9PSxABEiEKHVJFU1BPTlNFX0NPREVfSU5WQUxJRF9QQVlMT0FEEAISGwoXUkVTUE9OU0VfQ09ERV9OT1RfRk9VTkQQAxIhCh1SRVNQT05TRV9DT0RFX0RVUExJQ0FURV9GSUVMRBAEEioKJlJFU1BPTlNFX0NPREVfU0NIRU1BX1ZBTElEQVRJT05fRkFJTEVEEAUSIAocUkVTUE9OU0VfQ09ERV9JTlRFUk5BTF9FUlJPUhAGKvYBCgtGaWVsZEZvcm1hdBIcChhGSUVMRF9GT1JNQVRfVU5TUEVDSUZJRUQQABIXChNGSUVMRF9GT1JNQVRfU1RSSU5HEAESGAoURklFTERfRk9STUFUX0lOVEVHRVIQAhIXChNGSUVMRF9GT1JNQVRfTlVNQkVSEAMSGAoURklFTERfRk9STUFUX0JPT0xFQU4QBBIaChZGSUVMRF9GT1JNQVRfREFURV9USU1FEAUSFQoRRklFTERfRk9STUFUX0RBVEUQBhIVChFGSUVMRF9GT1JNQVRfVElNRRAHEhkKFUZJRUxEX0ZPUk1BVF9EVVJBVElPThAIKh4KBUVycm9yEhUKEUVSUk9SX1VOU1BFQ0lGSUVEEABCaQoMY29tLnRhbGx5LnYxQgxTZXJ2aWNlUHJvdG9QAVoKcGIvdGFsbHl2MaICA1RYWKoCCFRhbGx5LlYxygIIVGFsbHlcVjHiAhRUYWxseVxWMVxHUEJNZXRhZGF0YeoCCVRhbGx5OjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message tally.v1.Schema
@@ -402,6 +402,133 @@ export type ListEntriesResponse = Message<"tally.v1.ListEntriesResponse"> & {
  */
 export const ListEntriesResponseSchema: GenMessage<ListEntriesResponse> = /*@__PURE__*/
   messageDesc(file_tally_v1_service, 12);
+
+/**
+ * @generated from message tally.v1.UpdateEntryRequest
+ */
+export type UpdateEntryRequest = Message<"tally.v1.UpdateEntryRequest"> & {
+  /**
+   * @generated from field: string tally_id = 1;
+   */
+  tallyId: string;
+
+  /**
+   * @generated from field: string patch_data = 2;
+   */
+  patchData: string;
+};
+
+/**
+ * Describes the message tally.v1.UpdateEntryRequest.
+ * Use `create(UpdateEntryRequestSchema)` to create a new message.
+ */
+export const UpdateEntryRequestSchema: GenMessage<UpdateEntryRequest> = /*@__PURE__*/
+  messageDesc(file_tally_v1_service, 13);
+
+/**
+ * @generated from message tally.v1.UpdateEntryResponse
+ */
+export type UpdateEntryResponse = Message<"tally.v1.UpdateEntryResponse"> & {
+  /**
+   * @generated from field: tally.v1.Entry updated_entry = 1;
+   */
+  updatedEntry?: Entry | undefined;
+
+  /**
+   * @generated from field: tally.v1.ResponseCode code = 6;
+   */
+  code: ResponseCode;
+
+  /**
+   * @generated from field: string error_message = 7;
+   */
+  errorMessage: string;
+};
+
+/**
+ * Describes the message tally.v1.UpdateEntryResponse.
+ * Use `create(UpdateEntryResponseSchema)` to create a new message.
+ */
+export const UpdateEntryResponseSchema: GenMessage<UpdateEntryResponse> = /*@__PURE__*/
+  messageDesc(file_tally_v1_service, 14);
+
+/**
+ * @generated from message tally.v1.DeleteTallyRequest
+ */
+export type DeleteTallyRequest = Message<"tally.v1.DeleteTallyRequest"> & {
+  /**
+   * @generated from field: string tally_id = 1;
+   */
+  tallyId: string;
+};
+
+/**
+ * Describes the message tally.v1.DeleteTallyRequest.
+ * Use `create(DeleteTallyRequestSchema)` to create a new message.
+ */
+export const DeleteTallyRequestSchema: GenMessage<DeleteTallyRequest> = /*@__PURE__*/
+  messageDesc(file_tally_v1_service, 15);
+
+/**
+ * @generated from message tally.v1.DeleteTallyResponse
+ */
+export type DeleteTallyResponse = Message<"tally.v1.DeleteTallyResponse"> & {
+  /**
+   * @generated from field: tally.v1.ResponseCode code = 6;
+   */
+  code: ResponseCode;
+
+  /**
+   * @generated from field: string error_message = 7;
+   */
+  errorMessage: string;
+};
+
+/**
+ * Describes the message tally.v1.DeleteTallyResponse.
+ * Use `create(DeleteTallyResponseSchema)` to create a new message.
+ */
+export const DeleteTallyResponseSchema: GenMessage<DeleteTallyResponse> = /*@__PURE__*/
+  messageDesc(file_tally_v1_service, 16);
+
+/**
+ * @generated from message tally.v1.DeleteEntryRequest
+ */
+export type DeleteEntryRequest = Message<"tally.v1.DeleteEntryRequest"> & {
+  /**
+   * @generated from field: string entry_id = 1;
+   */
+  entryId: string;
+};
+
+/**
+ * Describes the message tally.v1.DeleteEntryRequest.
+ * Use `create(DeleteEntryRequestSchema)` to create a new message.
+ */
+export const DeleteEntryRequestSchema: GenMessage<DeleteEntryRequest> = /*@__PURE__*/
+  messageDesc(file_tally_v1_service, 17);
+
+/**
+ * @generated from message tally.v1.DeleteEntryResponse
+ */
+export type DeleteEntryResponse = Message<"tally.v1.DeleteEntryResponse"> & {
+  /**
+   * @generated from field: tally.v1.ResponseCode code = 6;
+   */
+  code: ResponseCode;
+
+  /**
+   * @generated from field: string error_message = 7;
+   */
+  errorMessage: string;
+};
+
+/**
+ * Describes the message tally.v1.DeleteEntryResponse.
+ * Use `create(DeleteEntryResponseSchema)` to create a new message.
+ */
+export const DeleteEntryResponseSchema: GenMessage<DeleteEntryResponse> = /*@__PURE__*/
+  messageDesc(file_tally_v1_service, 18);
 
 /**
  * Centralized response status codes across all Cgo operations

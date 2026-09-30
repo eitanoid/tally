@@ -118,3 +118,32 @@ message ListEntriesResponse {
   ResponseCode code = 6;
   string error_message = 7;
 }
+
+message UpdateEntryRequest {
+  string tally_id = 1;
+  string patch_data = 2;
+}
+
+message UpdateEntryResponse {
+  Entry updated_entry = 1;
+  ResponseCode code = 6;
+  string error_message = 7;
+}
+
+message DeleteTallyRequest {
+  string tally_id = 1;
+}
+
+message DeleteTallyResponse {
+  ResponseCode code = 6;
+  string error_message = 7;
+}
+
+message DeleteEntryRequest {
+  string entry_id = 1;
+}
+
+message DeleteEntryResponse {
+  ResponseCode code = 6;
+  string error_message = 7;
+}

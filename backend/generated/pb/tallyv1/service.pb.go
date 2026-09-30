@@ -1031,6 +1031,310 @@ func (x *ListEntriesResponse) GetErrorMessage() string {
 	return ""
 }
 
+type UpdateEntryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TallyId       string                 `protobuf:"bytes,1,opt,name=tally_id,json=tallyId,proto3" json:"tally_id,omitempty"`
+	PatchData     string                 `protobuf:"bytes,2,opt,name=patch_data,json=patchData,proto3" json:"patch_data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateEntryRequest) Reset() {
+	*x = UpdateEntryRequest{}
+	mi := &file_tally_v1_service_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateEntryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateEntryRequest) ProtoMessage() {}
+
+func (x *UpdateEntryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateEntryRequest.ProtoReflect.Descriptor instead.
+func (*UpdateEntryRequest) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UpdateEntryRequest) GetTallyId() string {
+	if x != nil {
+		return x.TallyId
+	}
+	return ""
+}
+
+func (x *UpdateEntryRequest) GetPatchData() string {
+	if x != nil {
+		return x.PatchData
+	}
+	return ""
+}
+
+type UpdateEntryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UpdatedEntry  *Entry                 `protobuf:"bytes,1,opt,name=updated_entry,json=updatedEntry,proto3" json:"updated_entry,omitempty"`
+	Code          ResponseCode           `protobuf:"varint,6,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateEntryResponse) Reset() {
+	*x = UpdateEntryResponse{}
+	mi := &file_tally_v1_service_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateEntryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateEntryResponse) ProtoMessage() {}
+
+func (x *UpdateEntryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateEntryResponse.ProtoReflect.Descriptor instead.
+func (*UpdateEntryResponse) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *UpdateEntryResponse) GetUpdatedEntry() *Entry {
+	if x != nil {
+		return x.UpdatedEntry
+	}
+	return nil
+}
+
+func (x *UpdateEntryResponse) GetCode() ResponseCode {
+	if x != nil {
+		return x.Code
+	}
+	return ResponseCode_RESPONSE_CODE_UNSPECIFIED
+}
+
+func (x *UpdateEntryResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type DeleteTallyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TallyId       string                 `protobuf:"bytes,1,opt,name=tally_id,json=tallyId,proto3" json:"tally_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTallyRequest) Reset() {
+	*x = DeleteTallyRequest{}
+	mi := &file_tally_v1_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTallyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTallyRequest) ProtoMessage() {}
+
+func (x *DeleteTallyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTallyRequest.ProtoReflect.Descriptor instead.
+func (*DeleteTallyRequest) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *DeleteTallyRequest) GetTallyId() string {
+	if x != nil {
+		return x.TallyId
+	}
+	return ""
+}
+
+type DeleteTallyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          ResponseCode           `protobuf:"varint,6,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTallyResponse) Reset() {
+	*x = DeleteTallyResponse{}
+	mi := &file_tally_v1_service_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTallyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTallyResponse) ProtoMessage() {}
+
+func (x *DeleteTallyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTallyResponse.ProtoReflect.Descriptor instead.
+func (*DeleteTallyResponse) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *DeleteTallyResponse) GetCode() ResponseCode {
+	if x != nil {
+		return x.Code
+	}
+	return ResponseCode_RESPONSE_CODE_UNSPECIFIED
+}
+
+func (x *DeleteTallyResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type DeleteEntryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EntryId       string                 `protobuf:"bytes,1,opt,name=entry_id,json=entryId,proto3" json:"entry_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteEntryRequest) Reset() {
+	*x = DeleteEntryRequest{}
+	mi := &file_tally_v1_service_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteEntryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteEntryRequest) ProtoMessage() {}
+
+func (x *DeleteEntryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteEntryRequest.ProtoReflect.Descriptor instead.
+func (*DeleteEntryRequest) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DeleteEntryRequest) GetEntryId() string {
+	if x != nil {
+		return x.EntryId
+	}
+	return ""
+}
+
+type DeleteEntryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          ResponseCode           `protobuf:"varint,6,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteEntryResponse) Reset() {
+	*x = DeleteEntryResponse{}
+	mi := &file_tally_v1_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteEntryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteEntryResponse) ProtoMessage() {}
+
+func (x *DeleteEntryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tally_v1_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteEntryResponse.ProtoReflect.Descriptor instead.
+func (*DeleteEntryResponse) Descriptor() ([]byte, []int) {
+	return file_tally_v1_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *DeleteEntryResponse) GetCode() ResponseCode {
+	if x != nil {
+		return x.Code
+	}
+	return ResponseCode_RESPONSE_CODE_UNSPECIFIED
+}
+
+func (x *DeleteEntryResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_tally_v1_service_proto protoreflect.FileDescriptor
 
 const file_tally_v1_service_proto_rawDesc = "" +
@@ -1099,6 +1403,24 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"totalCount\x12\x19\n" +
 	"\bhas_more\x18\x05 \x01(\bR\ahasMore\x12*\n" +
 	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"N\n" +
+	"\x12UpdateEntryRequest\x12\x19\n" +
+	"\btally_id\x18\x01 \x01(\tR\atallyId\x12\x1d\n" +
+	"\n" +
+	"patch_data\x18\x02 \x01(\tR\tpatchData\"\x9c\x01\n" +
+	"\x13UpdateEntryResponse\x124\n" +
+	"\rupdated_entry\x18\x01 \x01(\v2\x0f.tally.v1.EntryR\fupdatedEntry\x12*\n" +
+	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"/\n" +
+	"\x12DeleteTallyRequest\x12\x19\n" +
+	"\btally_id\x18\x01 \x01(\tR\atallyId\"f\n" +
+	"\x13DeleteTallyResponse\x12*\n" +
+	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"/\n" +
+	"\x12DeleteEntryRequest\x12\x19\n" +
+	"\bentry_id\x18\x01 \x01(\tR\aentryId\"f\n" +
+	"\x13DeleteEntryResponse\x12*\n" +
+	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
 	"\rerror_message\x18\a \x01(\tR\ferrorMessage*\xf4\x01\n" +
 	"\fResponseCode\x12\x1d\n" +
 	"\x19RESPONSE_CODE_UNSPECIFIED\x10\x00\x12\x14\n" +
@@ -1136,7 +1458,7 @@ func file_tally_v1_service_proto_rawDescGZIP() []byte {
 }
 
 var file_tally_v1_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_tally_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_tally_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_tally_v1_service_proto_goTypes = []any{
 	(ResponseCode)(0),               // 0: tally.v1.ResponseCode
 	(FieldFormat)(0),                // 1: tally.v1.FieldFormat
@@ -1154,12 +1476,18 @@ var file_tally_v1_service_proto_goTypes = []any{
 	(*ListSchemasResponse)(nil),     // 13: tally.v1.ListSchemasResponse
 	(*ListEntriesRequest)(nil),      // 14: tally.v1.ListEntriesRequest
 	(*ListEntriesResponse)(nil),     // 15: tally.v1.ListEntriesResponse
-	(*timestamppb.Timestamp)(nil),   // 16: google.protobuf.Timestamp
+	(*UpdateEntryRequest)(nil),      // 16: tally.v1.UpdateEntryRequest
+	(*UpdateEntryResponse)(nil),     // 17: tally.v1.UpdateEntryResponse
+	(*DeleteTallyRequest)(nil),      // 18: tally.v1.DeleteTallyRequest
+	(*DeleteTallyResponse)(nil),     // 19: tally.v1.DeleteTallyResponse
+	(*DeleteEntryRequest)(nil),      // 20: tally.v1.DeleteEntryRequest
+	(*DeleteEntryResponse)(nil),     // 21: tally.v1.DeleteEntryResponse
+	(*timestamppb.Timestamp)(nil),   // 22: google.protobuf.Timestamp
 }
 var file_tally_v1_service_proto_depIdxs = []int32{
-	16, // 0: tally.v1.Schema.created_at:type_name -> google.protobuf.Timestamp
-	16, // 1: tally.v1.Entry.created_at:type_name -> google.protobuf.Timestamp
-	16, // 2: tally.v1.Entry.updated_at:type_name -> google.protobuf.Timestamp
+	22, // 0: tally.v1.Schema.created_at:type_name -> google.protobuf.Timestamp
+	22, // 1: tally.v1.Entry.created_at:type_name -> google.protobuf.Timestamp
+	22, // 2: tally.v1.Entry.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: tally.v1.RecordEntryResponse.code:type_name -> tally.v1.ResponseCode
 	1,  // 4: tally.v1.SchemaRequestField.type:type_name -> tally.v1.FieldFormat
 	7,  // 5: tally.v1.CreateSchemaRequest.fields:type_name -> tally.v1.SchemaRequestField
@@ -1170,11 +1498,15 @@ var file_tally_v1_service_proto_depIdxs = []int32{
 	0,  // 10: tally.v1.ListSchemasResponse.code:type_name -> tally.v1.ResponseCode
 	4,  // 11: tally.v1.ListEntriesResponse.entries:type_name -> tally.v1.Entry
 	0,  // 12: tally.v1.ListEntriesResponse.code:type_name -> tally.v1.ResponseCode
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	4,  // 13: tally.v1.UpdateEntryResponse.updated_entry:type_name -> tally.v1.Entry
+	0,  // 14: tally.v1.UpdateEntryResponse.code:type_name -> tally.v1.ResponseCode
+	0,  // 15: tally.v1.DeleteTallyResponse.code:type_name -> tally.v1.ResponseCode
+	0,  // 16: tally.v1.DeleteEntryResponse.code:type_name -> tally.v1.ResponseCode
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_tally_v1_service_proto_init() }
@@ -1188,7 +1520,7 @@ func file_tally_v1_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tally_v1_service_proto_rawDesc), len(file_tally_v1_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   13,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
