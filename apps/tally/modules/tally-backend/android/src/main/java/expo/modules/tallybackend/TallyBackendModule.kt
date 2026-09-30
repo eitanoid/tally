@@ -65,5 +65,20 @@ class TallyBackendModule : Module() {
             val respBytes = Bridge.recordEntry(reqBytes)
             respBytes
     }
+    AsyncFunction("deleteTally") {
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.deleteTally(reqBytes)
+            respBytes
+    }
+    AsyncFunction("deleteEntry") {
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.deleteEntry(reqBytes)
+            respBytes
+    }
+    AsyncFunction("updateEntry") {
+        reqBytes: ByteArray ->
+            val respBytes = Bridge.updateEntry(reqBytes)
+            respBytes
+    }
   }
 }

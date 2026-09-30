@@ -1,5 +1,5 @@
 // modules/tally-backend/index.ts
-import { toBinary, fromBinary, create, type DescMessage } from '@bufbuild/protobuf';
+import { toBinary, fromBinary, create, DescMessage, MessageShape, MessageInitShape, } from '@bufbuild/protobuf';
 import { requireNativeModule } from 'expo-modules-core';
 
 // 1. Import Protobuf Schemas & Types
@@ -15,11 +15,12 @@ import {
     ListSchemasResponseSchema,
     RecordEntryRequestSchema,
     RecordEntryResponseSchema,
-    type CreateSchemaResponse,
-    type GetLatestSchemaResponse,
-    type ListEntriesResponse,
-    type ListSchemasResponse,
-    type RecordEntryResponse,
+    DeleteEntryRequestSchema,
+    DeleteEntryResponseSchema,
+    DeleteTallyRequestSchema,
+    DeleteTallyResponseSchema,
+    UpdateEntryRequestSchema,
+    UpdateEntryResponseSchema,
 } from '../../generated/tally/v1/service_pb';
 
 
@@ -32,11 +33,32 @@ interface TallyBackendNativeModule {
     getLatestSchema(reqBytes: Uint8Array): Promise<Uint8Array>;
     listSchemas(reqBytes: Uint8Array): Promise<Uint8Array>;
     recordEntry(reqBytes: Uint8Array): Promise<Uint8Array>;
+    deleteTally(reqBytes: Uint8Array): Promise<Uint8Array>;
+    deleteEntry(reqBytes: Uint8Array): Promise<Uint8Array>;
+    updateEntry(reqBytes: Uint8Array): Promise<Uint8Array>;
 }
 
 const TallyBackend = requireNativeModule<TallyBackendNativeModule>('TallyBackend');
 
-// 3. Export Utility Native Methods
+function createFFIHandler<
+    ReqSchema extends DescMessage,
+    RespSchema extends DescMessage
+>(
+    reqSchema: ReqSchema,
+    respSchema: RespSchema,
+    ffiMethod: (bytes: Uint8Array) => Promise<Uint8Array>
+) {
+    return async (
+        request: MessageInitShape<ReqSchema> = {} as MessageInitShape<ReqSchema>
+    ): Promise<MessageShape<RespSchema>> => {
+        const reqMsg = create(reqSchema, request);
+        const reqBytes = toBinary(reqSchema, reqMsg);
+        const respBytes = await ffiMethod(reqBytes);
+        return fromBinary(respSchema, respBytes) as unknown as MessageShape<RespSchema>;
+    };
+}
+
+
 export function pingGo(name: string): string {
     return TallyBackend.pingGo(name);
 }
@@ -45,53 +67,51 @@ export function closeEngine(): void {
     TallyBackend.close();
 }
 
-// 4. Export Typed FFI RPC Wrappers (Serialization -> Native Call -> Deserialization)
-type Init<T extends DescMessage> = Parameters<typeof create<T>>[1];
+export const createSchema = createFFIHandler(
+    CreateSchemaRequestSchema,
+    CreateSchemaResponseSchema,
+    TallyBackend.createSchema
+);
+export const getLatestSchema = createFFIHandler(
+    GetLatestSchemaRequestSchema,
+    GetLatestSchemaResponseSchema,
+    TallyBackend.getLatestSchema
+);
+export const listSchemas = createFFIHandler(
+    ListSchemasRequestSchema,
+    ListSchemasResponseSchema,
+    TallyBackend.listSchemas
+);
 
-export async function createSchema(
-    request: Init<typeof CreateSchemaRequestSchema>
-): Promise<CreateSchemaResponse> {
-    const msg = create(CreateSchemaRequestSchema, request);
-    const reqBytes = toBinary(CreateSchemaRequestSchema, msg);
-    const respBytes = await TallyBackend.createSchema(reqBytes);
-    return fromBinary(CreateSchemaResponseSchema, respBytes);
-}
+export const recordEntry = createFFIHandler(
+    RecordEntryRequestSchema,
+    RecordEntryResponseSchema,
+    TallyBackend.recordEntry
+);
 
-export async function getLatestSchema(
-    request: Init<typeof GetLatestSchemaRequestSchema>
-): Promise<GetLatestSchemaResponse> {
-    const msg = create(GetLatestSchemaRequestSchema, request);
-    const reqBytes = toBinary(GetLatestSchemaRequestSchema, msg);
-    const respBytes = await TallyBackend.getLatestSchema(reqBytes);
-    return fromBinary(GetLatestSchemaResponseSchema, respBytes);
-}
+export const updateEntry = createFFIHandler(
+    UpdateEntryRequestSchema,
+    UpdateEntryResponseSchema,
+    TallyBackend.updateEntry
+);
 
-export async function listSchemas(
-    request: Init<typeof ListSchemasRequestSchema> = {}
-): Promise<ListSchemasResponse> {
-    const msg = create(ListSchemasRequestSchema, request);
-    const reqBytes = toBinary(ListSchemasRequestSchema, msg);
-    const respBytes = await TallyBackend.listSchemas(reqBytes);
-    return fromBinary(ListSchemasResponseSchema, respBytes);
-}
+export const deleteEntry = createFFIHandler(
+    DeleteEntryRequestSchema,
+    DeleteEntryResponseSchema,
+    TallyBackend.deleteEntry
+);
 
-export async function recordEntry(
-    request: Init<typeof RecordEntryRequestSchema>
-): Promise<RecordEntryResponse> {
-    const msg = create(RecordEntryRequestSchema, request);
-    const reqBytes = toBinary(RecordEntryRequestSchema, msg);
-    const respBytes = await TallyBackend.recordEntry(reqBytes);
-    return fromBinary(RecordEntryResponseSchema, respBytes);
-}
+export const deleteTally = createFFIHandler(
+    DeleteTallyRequestSchema,
+    DeleteTallyResponseSchema,
+    TallyBackend.deleteTally
+);
 
-export async function listEntries(
-    request: Init<typeof ListEntriesRequestSchema>
-): Promise<ListEntriesResponse> {
-    const msg = create(ListEntriesRequestSchema, request);
-    const reqBytes = toBinary(ListEntriesRequestSchema, msg);
-    const respBytes = await TallyBackend.listEntries(reqBytes);
-    return fromBinary(ListEntriesResponseSchema, respBytes);
-}
+export const listEntries = createFFIHandler(
+    ListEntriesRequestSchema,
+    ListEntriesResponseSchema,
+    TallyBackend.deleteTally
+);
 
 export default TallyBackend;
 

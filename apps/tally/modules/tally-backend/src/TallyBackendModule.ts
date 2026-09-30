@@ -7,6 +7,9 @@ declare class TallyBackendModule extends NativeModule<{}> {
     getLatestSchema(reqBytes: Uint8Array): Promise<Uint8Array>;
     listSchemas(reqBytes: Uint8Array): Promise<Uint8Array>;
     recordEntry(reqBytes: Uint8Array): Promise<Uint8Array>;
+    deleteTally(reqBytes: Uint8Array): Promise<Uint8Array>;
+    deleteEntry(reqBytes: Uint8Array): Promise<Uint8Array>;
+    updateEntry(reqBytes: Uint8Array): Promise<Uint8Array>;
     close(): void
 }
 
