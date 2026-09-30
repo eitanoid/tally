@@ -297,3 +297,270 @@ func TestBridge_RecordAndListEntries(t *testing.T) {
 		}
 	})
 }
+
+func TestBridge_UpdateEntry(t *testing.T) {
+	setupTestBridge(t)
+
+	// Seed schema and an entry to update
+	createSchemaBytes, _ := proto.Marshal(&tallyv1.CreateSchemaRequest{
+		Name: "Counter",
+		Fields: []*tallyv1.SchemaRequestField{
+			{Name: "count", Type: tallyv1.FieldFormat_FIELD_FORMAT_INTEGER, Required: true},
+		},
+	})
+	createSchemaOut := bridge.CreateSchema(createSchemaBytes)
+	var createSchemaResp tallyv1.CreateSchemaResponse
+	_ = proto.Unmarshal(createSchemaOut, &createSchemaResp)
+	tallyID := createSchemaResp.GetTallyId()
+
+	recBytes, _ := proto.Marshal(&tallyv1.RecordEntryRequest{
+		TallyId:     tallyID,
+		PayloadJson: `{"count": 5}`,
+	})
+	recOut := bridge.RecordEntry(recBytes)
+	var recResp tallyv1.RecordEntryResponse
+	_ = proto.Unmarshal(recOut, &recResp)
+	entryID := recResp.GetEntryId()
+
+	tests := []struct {
+		name         string
+		req          *tallyv1.UpdateEntryRequest
+		corruptBytes []byte
+		wantCode     tallyv1.ResponseCode
+	}{
+		{
+			name: "successfully update entry data",
+			req: &tallyv1.UpdateEntryRequest{
+				EntryId:   entryID,
+				PatchData: `{"count": 10}`,
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_OK,
+		},
+		{
+			name: "reject update for non-existent entry",
+			req: &tallyv1.UpdateEntryRequest{
+				EntryId:   "non-existent-entry-id",
+				PatchData: `{"count": 10}`,
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+		{
+			name: "reject patch payload failing schema validation",
+			req: &tallyv1.UpdateEntryRequest{
+				EntryId:   entryID,
+				PatchData: `{"count": "not-an-integer"}`,
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+		{
+			name:         "handle malformed input bytes gracefully",
+			corruptBytes: []byte("invalid-proto-bytes"),
+			wantCode:     tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var inputBytes []byte
+			var err error
+
+			if tt.corruptBytes != nil {
+				inputBytes = tt.corruptBytes
+			} else {
+				inputBytes, err = proto.Marshal(tt.req)
+				if err != nil {
+					t.Fatalf("failed to marshal request: %v", err)
+				}
+			}
+
+			outBytes := bridge.UpdateEntry(inputBytes)
+
+			var resp tallyv1.UpdateEntryResponse
+			if err := proto.Unmarshal(outBytes, &resp); err != nil {
+				t.Fatalf("failed to unmarshal UpdateEntry response bytes: %v", err)
+			}
+
+			if resp.GetCode() != tt.wantCode {
+				t.Errorf("UpdateEntry() code = %v, want %v (error_message: %s)", resp.GetCode(), tt.wantCode, resp.GetErrorMessage())
+			}
+
+			if tt.wantCode == tallyv1.ResponseCode_RESPONSE_CODE_OK {
+				if resp.GetUpdatedEntry().GetEntryId() != entryID {
+					t.Errorf("got EntryId %s, want %s", resp.GetUpdatedEntry().GetEntryId(), entryID)
+				}
+				if resp.GetUpdatedEntry().GetData() != `{"count":10}` {
+					t.Errorf("got updated Data = %s, want %s", resp.GetUpdatedEntry().GetData(), `{"count":10}`)
+				}
+				if resp.GetUpdatedEntry().GetUpdatedAt() == nil {
+					t.Errorf("expected UpdatedAt timestamp to be populated in updated proto entry")
+				}
+			}
+		})
+	}
+}
+
+func TestBridge_DeleteEntry(t *testing.T) {
+	setupTestBridge(t)
+
+	// Seed schema and an entry to delete
+	createSchemaBytes, _ := proto.Marshal(&tallyv1.CreateSchemaRequest{
+		Name: "Habits",
+		Fields: []*tallyv1.SchemaRequestField{
+			{Name: "done", Type: tallyv1.FieldFormat_FIELD_FORMAT_BOOLEAN, Required: true},
+		},
+	})
+	createSchemaOut := bridge.CreateSchema(createSchemaBytes)
+	var createSchemaResp tallyv1.CreateSchemaResponse
+	_ = proto.Unmarshal(createSchemaOut, &createSchemaResp)
+
+	recBytes, _ := proto.Marshal(&tallyv1.RecordEntryRequest{
+		TallyId:     createSchemaResp.GetTallyId(),
+		PayloadJson: `{"done": true}`,
+	})
+	recOut := bridge.RecordEntry(recBytes)
+	var recResp tallyv1.RecordEntryResponse
+	_ = proto.Unmarshal(recOut, &recResp)
+	entryID := recResp.GetEntryId()
+
+	tests := []struct {
+		name         string
+		req          *tallyv1.DeleteEntryRequest
+		corruptBytes []byte
+		wantCode     tallyv1.ResponseCode
+	}{
+		{
+			name: "successfully soft-delete entry",
+			req: &tallyv1.DeleteEntryRequest{
+				EntryId: entryID,
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_OK,
+		},
+		{
+			name: "return error for non-existent entry",
+			req: &tallyv1.DeleteEntryRequest{
+				EntryId: "non-existent-entry-id",
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+		{
+			name:         "handle malformed input bytes gracefully",
+			corruptBytes: []byte("invalid-proto-bytes"),
+			wantCode:     tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var inputBytes []byte
+			var err error
+
+			if tt.corruptBytes != nil {
+				inputBytes = tt.corruptBytes
+			} else {
+				inputBytes, err = proto.Marshal(tt.req)
+				if err != nil {
+					t.Fatalf("failed to marshal request: %v", err)
+				}
+			}
+
+			outBytes := bridge.DeleteEntry(inputBytes)
+
+			var resp tallyv1.DeleteEntryResponse
+			if err := proto.Unmarshal(outBytes, &resp); err != nil {
+				t.Fatalf("failed to unmarshal DeleteEntry response bytes: %v", err)
+			}
+
+			if resp.GetCode() != tt.wantCode {
+				t.Errorf("DeleteEntry() code = %v, want %v (error_message: %s)", resp.GetCode(), tt.wantCode, resp.GetErrorMessage())
+			}
+		})
+	}
+}
+
+func TestBridge_DeleteTally(t *testing.T) {
+	setupTestBridge(t)
+
+	// Seed schema and an entry
+	createSchemaBytes, _ := proto.Marshal(&tallyv1.CreateSchemaRequest{
+		Name: "Water Log",
+		Fields: []*tallyv1.SchemaRequestField{
+			{Name: "ml", Type: tallyv1.FieldFormat_FIELD_FORMAT_INTEGER, Required: true},
+		},
+	})
+	createSchemaOut := bridge.CreateSchema(createSchemaBytes)
+	var createSchemaResp tallyv1.CreateSchemaResponse
+	_ = proto.Unmarshal(createSchemaOut, &createSchemaResp)
+	tallyID := createSchemaResp.GetTallyId()
+
+	recBytes, _ := proto.Marshal(&tallyv1.RecordEntryRequest{
+		TallyId:     tallyID,
+		PayloadJson: `{"ml": 250}`,
+	})
+	_ = bridge.RecordEntry(recBytes)
+
+	tests := []struct {
+		name         string
+		req          *tallyv1.DeleteTallyRequest
+		corruptBytes []byte
+		wantCode     tallyv1.ResponseCode
+	}{
+		{
+			name: "successfully soft-delete tally",
+			req: &tallyv1.DeleteTallyRequest{
+				TallyId: tallyID,
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_OK,
+		},
+		{
+			name: "return error for non-existent tally",
+			req: &tallyv1.DeleteTallyRequest{
+				TallyId: "00000000-0000-0000-0000-000000000000",
+			},
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+		{
+			name:         "handle malformed input bytes gracefully",
+			corruptBytes: []byte("invalid-proto-bytes"),
+			wantCode:     tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var inputBytes []byte
+			var err error
+
+			if tt.corruptBytes != nil {
+				inputBytes = tt.corruptBytes
+			} else {
+				inputBytes, err = proto.Marshal(tt.req)
+				if err != nil {
+					t.Fatalf("failed to marshal request: %v", err)
+				}
+			}
+
+			outBytes := bridge.DeleteTally(inputBytes)
+
+			var resp tallyv1.DeleteTallyResponse
+			if err := proto.Unmarshal(outBytes, &resp); err != nil {
+				t.Fatalf("failed to unmarshal DeleteTally response bytes: %v", err)
+			}
+
+			if resp.GetCode() != tt.wantCode {
+				t.Errorf("DeleteTally() code = %v, want %v (error_message: %s)", resp.GetCode(), tt.wantCode, resp.GetErrorMessage())
+			}
+
+			// Verify that soft-deleted tally schema is no longer accessible via GetLatestSchema
+			if tt.wantCode == tallyv1.ResponseCode_RESPONSE_CODE_OK {
+				getSchemaBytes, _ := proto.Marshal(&tallyv1.GetLatestSchemaRequest{TallyId: tallyID})
+				getSchemaOut := bridge.GetLatestSchema(getSchemaBytes)
+				var getSchemaResp tallyv1.GetLatestSchemaResponse
+				_ = proto.Unmarshal(getSchemaOut, &getSchemaResp)
+
+				if getSchemaResp.GetCode() == tallyv1.ResponseCode_RESPONSE_CODE_OK {
+					t.Errorf("expected GetLatestSchema to fail for soft-deleted tally, but got OK")
+				}
+			}
+		})
+	}
+}

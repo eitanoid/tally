@@ -364,3 +364,142 @@ func RecordEntry(requestBytes []byte) []byte {
 	}
 	return out
 }
+
+// UpdateEntry accepts a serialized UpdateEntryRequest and returns a serialized UpdateEntryResponse.
+func UpdateEntry(requestBytes []byte) []byte {
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setUpdateEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	var req tallyv1.UpdateEntryRequest
+	if err := unmarshalRequest(requestBytes, &req); err != nil {
+		return marshalProtoError(
+			setUpdateEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	updatedEntry, err := st.service.UpdateEntry(st.ctx, req.GetEntryId(), req.GetPatchData())
+	if err != nil {
+		return marshalProtoError(
+			setUpdateEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	resp := &tallyv1.UpdateEntryResponse{
+		// Entry: updatedEntry,
+		UpdatedEntry: &tallyv1.Entry{
+			EntryId:       updatedEntry.ID,
+			TallyId:       updatedEntry.TallyID,
+			SchemaVersion: int32(updatedEntry.SchemaVersion),
+			Data:          updatedEntry.Data,
+			CreatedAt:     timestamppb.New(updatedEntry.CreatedAt),
+			UpdatedAt:     timestamppb.New(updatedEntry.UpdatedAt),
+		},
+		Code: tallyv1.ResponseCode_RESPONSE_CODE_OK,
+	}
+
+	out, err := proto.Marshal(resp)
+	if err != nil {
+		return marshalProtoError(
+			setUpdateEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			fmt.Errorf("failed to marshal response: %w", err),
+		)
+	}
+	return out
+}
+
+// DeleteEntry accepts a serialized DeleteEntryRequest and returns a serialized DeleteEntryResponse.
+func DeleteEntry(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setDeleteEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+	var req tallyv1.DeleteEntryRequest
+	if err := unmarshalRequest(requestBytes, &req); err != nil {
+		return marshalProtoError(
+			setDeleteEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	if err := st.service.DeleteEntry(st.ctx, req.GetEntryId()); err != nil {
+		return marshalProtoError(
+			setDeleteEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	resp := &tallyv1.DeleteEntryResponse{
+		Code: tallyv1.ResponseCode_RESPONSE_CODE_OK,
+	}
+
+	out, err := proto.Marshal(resp)
+	if err != nil {
+		return marshalProtoError(
+			setDeleteEntryErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			fmt.Errorf("failed to marshal response: %w", err),
+		)
+	}
+	return out
+}
+
+// DeleteTally accepts a serialized DeleteTallyRequest and returns a serialized DeleteTallyResponse.
+func DeleteTally(requestBytes []byte) []byte {
+	// safely retrieve shared service
+	st, err := get()
+	if err != nil {
+		return marshalProtoError(
+			setDeleteTallyErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+	var req tallyv1.DeleteTallyRequest
+	if err := unmarshalRequest(requestBytes, &req); err != nil {
+		return marshalProtoError(
+			setDeleteTallyErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	if err := st.service.DeleteTally(st.ctx, req.GetTallyId()); err != nil {
+		return marshalProtoError(
+			setDeleteTallyErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			err,
+		)
+	}
+
+	resp := &tallyv1.DeleteTallyResponse{
+		Code: tallyv1.ResponseCode_RESPONSE_CODE_OK,
+	}
+
+	out, err := proto.Marshal(resp)
+	if err != nil {
+		return marshalProtoError(
+			setDeleteTallyErr,
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			fmt.Errorf("failed to marshal response: %w", err),
+		)
+	}
+	return out
+}

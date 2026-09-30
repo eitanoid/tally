@@ -120,7 +120,7 @@ message ListEntriesResponse {
 }
 
 message UpdateEntryRequest {
-  string tally_id = 1;
+  string entry_id = 1;
   string patch_data = 2;
 }
 

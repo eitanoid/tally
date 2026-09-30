@@ -77,12 +77,25 @@ func setGetLatestSchemaErr(r *tallyv1.GetLatestSchemaResponse, code tallyv1.Resp
 	r.Code = code
 	r.ErrorMessage = msg
 }
-
 func setListEntriesErr(r *tallyv1.ListEntriesResponse, code tallyv1.ResponseCode, msg string) {
 	r.Code = code
 	r.ErrorMessage = msg
 }
 func setRecordEntryErr(r *tallyv1.RecordEntryResponse, code tallyv1.ResponseCode, msg string) {
+	r.Code = code
+	r.ErrorMessage = msg
+}
+
+func setDeleteEntryErr(r *tallyv1.DeleteEntryResponse, code tallyv1.ResponseCode, msg string) {
+	r.Code = code
+	r.ErrorMessage = msg
+}
+func setDeleteTallyErr(r *tallyv1.DeleteTallyResponse, code tallyv1.ResponseCode, msg string) {
+	r.Code = code
+	r.ErrorMessage = msg
+}
+
+func setUpdateEntryErr(r *tallyv1.UpdateEntryResponse, code tallyv1.ResponseCode, msg string) {
 	r.Code = code
 	r.ErrorMessage = msg
 }

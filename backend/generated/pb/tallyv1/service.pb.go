@@ -1033,7 +1033,7 @@ func (x *ListEntriesResponse) GetErrorMessage() string {
 
 type UpdateEntryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TallyId       string                 `protobuf:"bytes,1,opt,name=tally_id,json=tallyId,proto3" json:"tally_id,omitempty"`
+	EntryId       string                 `protobuf:"bytes,1,opt,name=entry_id,json=entryId,proto3" json:"entry_id,omitempty"`
 	PatchData     string                 `protobuf:"bytes,2,opt,name=patch_data,json=patchData,proto3" json:"patch_data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1069,9 +1069,9 @@ func (*UpdateEntryRequest) Descriptor() ([]byte, []int) {
 	return file_tally_v1_service_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *UpdateEntryRequest) GetTallyId() string {
+func (x *UpdateEntryRequest) GetEntryId() string {
 	if x != nil {
-		return x.TallyId
+		return x.EntryId
 	}
 	return ""
 }
@@ -1405,7 +1405,7 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
 	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"N\n" +
 	"\x12UpdateEntryRequest\x12\x19\n" +
-	"\btally_id\x18\x01 \x01(\tR\atallyId\x12\x1d\n" +
+	"\bentry_id\x18\x01 \x01(\tR\aentryId\x12\x1d\n" +
 	"\n" +
 	"patch_data\x18\x02 \x01(\tR\tpatchData\"\x9c\x01\n" +
 	"\x13UpdateEntryResponse\x124\n" +
