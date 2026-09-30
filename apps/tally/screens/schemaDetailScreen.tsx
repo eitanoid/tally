@@ -5,6 +5,7 @@ import { Text, FAB, Button, useTheme } from 'react-native-paper';
 import { Schema, Entry, ResponseCode } from '../generated/tally/v1/service_pb';
 import { listEntries, recordEntry, updateEntry, deleteEntry, deleteTally } from '../modules/tally-backend';
 import { DynamicEntryFormModal } from '../components/DynamicEntryFormModal';
+import { DeleteConfirmationDialog } from '../components/DeleteConfirmationDialog';
 import { SchemaDetailHeader } from '../components/SchemaDetailHeader';
 import { EntryCard } from '../components/EntryCard';
 import { EntryTable } from '../components/EntryTable';
@@ -25,9 +26,22 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Delete Confirmation state
+  const [entryToDelete, setEntryToDelete] = useState<Entry | null>(null);
+  const [deleteSchemaDialogOpen, setDeleteSchemaDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Intercept device back button to return to tally list instead of exiting app
   useEffect(() => {
     const onBackPress = () => {
+      if (entryToDelete) {
+        setEntryToDelete(null);
+        return true;
+      }
+      if (deleteSchemaDialogOpen) {
+        setDeleteSchemaDialogOpen(false);
+        return true;
+      }
       if (formModalVisible) {
         setFormModalVisible(false);
         setSelectedEntry(null);
@@ -38,7 +52,7 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => sub.remove();
-  }, [formModalVisible, onBack]);
+  }, [entryToDelete, deleteSchemaDialogOpen, formModalVisible, onBack]);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -109,18 +123,27 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     setFormModalVisible(true);
   };
 
-  const handleDeleteEntry = async (entry: Entry) => {
+  const handleDeleteEntry = (entry: Entry) => {
+    setEntryToDelete(entry);
+  };
+
+  const confirmDeleteEntry = async () => {
+    if (!entryToDelete) return;
+    setIsDeleting(true);
     try {
       const res = await deleteEntry({
-        entryId: entry.entryId,
+        entryId: entryToDelete.entryId,
       });
       if (res.code !== ResponseCode.OK) {
         throw new Error(res.errorMessage || 'Failed to delete entry');
       }
+      setEntryToDelete(null);
       await fetchEntries();
     } catch (error: any) {
-      console.error('Failed to delete entry for', error);
+      console.error('Failed to delete entry:', error);
       Alert.alert('Error', error.message || 'Failed to delete entry');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -129,7 +152,12 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
     console.log('Export data requested for schema:', schema.name, entries);
   };
 
-  const handleDeleteSchema = async () => {
+  const handleDeleteSchema = () => {
+    setDeleteSchemaDialogOpen(true);
+  };
+
+  const confirmDeleteSchema = async () => {
+    setIsDeleting(true);
     try {
       const res = await deleteTally({
         tallyId: schema.tallyId,
@@ -137,10 +165,13 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
       if (res.code !== ResponseCode.OK) {
         throw new Error(res.errorMessage || 'Failed to delete tally');
       }
+      setDeleteSchemaDialogOpen(false);
       onBack();
     } catch (error: any) {
       console.error('Failed to delete schema:', error);
       Alert.alert('Error', error.message || 'Failed to delete schema');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -221,6 +252,28 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
         }}
         onSubmit={handleRecordOrUpdate}
         isSubmitting={isSubmitting}
+      />
+
+      {/* Delete Entry Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        visible={Boolean(entryToDelete)}
+        title="Delete Entry"
+        message="Are you sure you want to delete this recorded entry? This cannot be undone."
+        isDeleting={isDeleting}
+        onConfirm={confirmDeleteEntry}
+        onDismiss={() => setEntryToDelete(null)}
+      />
+
+      {/* Delete Schema Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        visible={deleteSchemaDialogOpen}
+        title="Delete Tally Schema"
+        itemName={schema.name}
+        message="Are you sure you want to delete this tally? All recorded entries associated with it will also be permanently deleted."
+        confirmLabel="Delete Tally"
+        isDeleting={isDeleting}
+        onConfirm={confirmDeleteSchema}
+        onDismiss={() => setDeleteSchemaDialogOpen(false)}
       />
     </View>
   );
