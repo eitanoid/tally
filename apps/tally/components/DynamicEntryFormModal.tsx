@@ -1,7 +1,7 @@
 // vi: set ts=2 sw=2
 import { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
-import { Dialog, Portal, Button } from 'react-native-paper';
+import { Dialog, Portal, Button, Text, useTheme } from 'react-native-paper';
 import { Schema } from '../generated/tally/v1/service_pb';
 import {
   DynamicEntryFormModalProps,
@@ -30,6 +30,7 @@ export function DynamicEntryFormModal({
   onSubmit,
   isSubmitting,
 }: DynamicEntryFormModalProps) {
+  const theme = useTheme();
   const [selectedSchema, setSelectedSchema] = useState<Schema | null>(
     schema || (schemas.length > 0 ? schemas[0] : null)
   );
@@ -146,6 +147,14 @@ export function DynamicEntryFormModal({
                   />
                 );
               })}
+            {parsedSchema && Object.keys(parsedSchema.properties || {}).length === 0 ? (
+              <Text
+                variant="bodyMedium"
+                style={[styles.emptySchemaMessage, { color: theme.colors.onSurfaceVariant }]}
+              >
+                This schema has no fields. Save to record an empty entry.
+              </Text>
+            ) : null}
           </ScrollView>
         </Dialog.ScrollArea>
 
@@ -178,5 +187,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingVertical: 12,
+  },
+  emptySchemaMessage: {
+    paddingVertical: 16,
+    textAlign: 'center',
   },
 });

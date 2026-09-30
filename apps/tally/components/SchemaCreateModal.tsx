@@ -71,7 +71,6 @@ export function SchemaCreateModal({
   };
 
   const removeField = (id: string) => {
-    if (fields.length === 1) return; // Keep at least one field
     setFields((prev) => prev.filter((f) => f.id !== id));
   };
 
@@ -115,6 +114,13 @@ export function SchemaCreateModal({
               </Button>
             </View>
 
+            {fields.length === 0 ? (
+              <Text variant="bodyMedium" style={styles.emptyFields}>
+                No fields yet. You can create an empty schema now, or add fields whenever you’re
+                ready to collect structured data.
+              </Text>
+            ) : null}
+
             {fields.map((field, index) => {
               const currentOption = getFieldFormatInfo(field.format);
               return (
@@ -123,14 +129,13 @@ export function SchemaCreateModal({
                     <Text variant="labelLarge" style={styles.fieldNumber}>
                       Field #{index + 1}
                     </Text>
-                    {fields.length > 1 && (
-                      <IconButton
-                        icon="delete-outline"
-                        size={18}
-                        iconColor="red"
-                        onPress={() => removeField(field.id)}
-                      />
-                    )}
+                    <IconButton
+                      icon="delete-outline"
+                      size={18}
+                      iconColor="red"
+                      accessibilityLabel={`Remove field ${field.name || index + 1}`}
+                      onPress={() => removeField(field.id)}
+                    />
                   </View>
 
                   <TextInput
@@ -239,6 +244,10 @@ const styles = StyleSheet.create({
   },
   fieldBlock: {
     marginBottom: 8,
+  },
+  emptyFields: {
+    marginVertical: 12,
+    opacity: 0.7,
   },
   fieldHeaderRow: {
     flexDirection: 'row',
