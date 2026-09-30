@@ -22,12 +22,13 @@ var (
 
 // TallyEntry represents a single recorded data point tied to a specific TallySchema version.
 type TallyEntry struct {
-	ID            string    `db:"id" json:"id"`
-	TallyID       string    `db:"tally_id" json:"tally_id"`
-	SchemaVersion int       `json:"schema_version" db:"schema_version"`
-	Data          string    `db:"data" json:"data"`
-	CreatedAt     time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
+	ID            string     `db:"id" json:"id"`
+	TallyID       string     `db:"tally_id" json:"tally_id"`
+	SchemaVersion int        `json:"schema_version" db:"schema_version"`
+	Data          string     `db:"data" json:"data"`
+	CreatedAt     time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time  `db:"updated_at" json:"updated_at"`
+	DeletedAt     *time.Time `db:"deleted_at" json:"deleted_at"`
 }
 
 // CreateTallyEntry creates a TallyEntry against a TallySchema and validates the data.

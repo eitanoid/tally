@@ -93,12 +93,13 @@ type SchemaRequest struct {
 
 // TallySchema is what gets persisted in the DB.
 type TallySchema struct {
-	TallyID       string    `db:"tally_id" json:"tally_id"`
-	Version       int       `json:"version" db:"version"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	JSONSchemaRaw string    `json:"json_schema"` // Raw JSON string stored in SQLite
-	CreatedAt     time.Time `db:"created_at"  json:"created_at"`
+	TallyID       string     `db:"tally_id" json:"tally_id"`
+	Version       int        `json:"version" db:"version"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	JSONSchemaRaw string     `json:"json_schema"` // Raw JSON string stored in SQLite
+	CreatedAt     time.Time  `db:"created_at"  json:"created_at"`
+	DeletedAt     *time.Time `db:"deleted_at"  json:"deleted_at"`
 }
 
 // SchemaRef is the minimal identifier for fetching a specific schema version
