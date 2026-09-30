@@ -28,10 +28,39 @@ func mapProtoTypeToDomain(pt tallyv1.FieldFormat) (schemas.SupportedType, error)
 		return schemas.TypeTime, nil
 	case tallyv1.FieldFormat_FIELD_FORMAT_DURATION:
 		return schemas.TypeDuration, nil
-
 	default:
 		return "", fmt.Errorf("unsupported or unspecified proto field type: %v", pt)
 	}
+}
+
+func handleRPC[Req proto.Message, Resp proto.Message](
+	requestBytes []byte,
+	req Req,
+	action func(st *bridge, req Req) (Resp, error),
+) []byte {
+	st, err := get()
+	if err != nil {
+		return marshalProtoError[Resp](tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR, err)
+	}
+
+	if err := unmarshalRequest(requestBytes, req); err != nil {
+		return marshalProtoError[Resp](tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR, err)
+	}
+
+	resp, err := action(st, req)
+	if err != nil {
+		return marshalProtoError[Resp](tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR, err)
+	}
+
+	out, err := proto.Marshal(resp)
+	if err != nil {
+		return marshalProtoError[Resp](
+			tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
+			fmt.Errorf("failed to marshal response: %w", err),
+		)
+	}
+
+	return out
 }
 
 // unmarshalRequest unmarshals incoming binary bytes into a proto message.
@@ -42,60 +71,43 @@ func unmarshalRequest[T proto.Message](data []byte, msg T) error {
 	return nil
 }
 
-// marshalProtoError populates a proto message using a setter callback and returns marshaled bytes.
-func marshalProtoError[T proto.Message](setErr func(T, tallyv1.ResponseCode, string), code tallyv1.ResponseCode, err error) []byte {
-	var msg T
-	// Safely allocate non-nil struct pointer if T is a pointer type (*tallyv1.SomeResponse)
-	msgType := reflect.TypeOf(msg)
-	if msgType.Kind() == reflect.Pointer {
-		msg = reflect.New(msgType.Elem()).Interface().(T)
-	}
+// marshalProtoError instantiates a response value, applies error details, and returns binary bytes.
+func marshalProtoError[Resp proto.Message](code tallyv1.ResponseCode, err error) []byte {
+	// Dynamically instantiate a new pointer to Resp struct (e.g. *tallyv1.DeleteEntryResponse)
+	respType := reflect.TypeOf((*Resp)(nil)).Elem()
+	resp := reflect.New(respType.Elem()).Interface().(Resp)
 
-	errMsg := ""
-	if err != nil {
-		errMsg = err.Error()
-	}
+	setErrorDetails(resp, code, err)
 
-	setErr(msg, code, errMsg)
-
-	out, marshalErr := proto.Marshal(msg)
+	out, marshalErr := proto.Marshal(resp)
 	if marshalErr != nil {
 		return []byte{}
 	}
 	return out
 }
 
-func setCreateSchemaErr(r *tallyv1.CreateSchemaResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
-func setListSchemasErr(r *tallyv1.ListSchemasResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
-func setGetLatestSchemaErr(r *tallyv1.GetLatestSchemaResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
-func setListEntriesErr(r *tallyv1.ListEntriesResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
-func setRecordEntryErr(r *tallyv1.RecordEntryResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
+func setErrorDetails[T proto.Message](resp T, code tallyv1.ResponseCode, err error) {
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
+	}
 
-func setDeleteEntryErr(r *tallyv1.DeleteEntryResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
-func setDeleteTallyErr(r *tallyv1.DeleteTallyResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
-}
-
-func setUpdateEntryErr(r *tallyv1.UpdateEntryResponse, code tallyv1.ResponseCode, msg string) {
-	r.Code = code
-	r.ErrorMessage = msg
+	switch r := any(resp).(type) {
+	case *tallyv1.CreateSchemaResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.ListSchemasResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.GetLatestSchemaResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.ListEntriesResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.RecordEntryResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.DeleteEntryResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.DeleteTallyResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	case *tallyv1.UpdateEntryResponse:
+		r.Code, r.ErrorMessage = code, errMsg
+	}
 }

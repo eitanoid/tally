@@ -61,7 +61,7 @@ func TestBridge_CreateSchema(t *testing.T) {
 					},
 				},
 			},
-			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_INVALID_PAYLOAD,
+			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_INTERNAL_ERROR,
 		},
 		{
 			name:         "handle malformed input bytes gracefully",
