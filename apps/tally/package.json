@@ -7,6 +7,7 @@
     "@react-native-vector-icons/material-design-icons": "^13.0.0",
     "date-fns": "^4.4.0",
     "expo": "^57.0.26",
+    "expo-build-properties": "^57.0.22",
     "expo-dev-client": "^57.0.19",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "^57.0.4",
