@@ -5,6 +5,7 @@
   "dependencies": {
     "@bufbuild/protobuf": "^2.16.0",
     "@react-native-vector-icons/material-design-icons": "^13.0.0",
+    "date-fns": "^4.4.0",
     "expo": "^57.0.26",
     "expo-dev-client": "^57.0.19",
     "expo-status-bar": "~57.0.1",

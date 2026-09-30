@@ -1,127 +1,148 @@
-// vi: set ts=2 sw=2
+import { format, isValid, parseISO } from 'date-fns';
 
 export interface FormattedTimestamp {
-  relative: string;
-  formatted: string;
+    relative: string;
+    formatted: string;
 }
 
+/**
+ * Safely converts an ISO string or Date into a formatted string.
+ */
+export function formatDate(
+    dateInput: string | Date | null | undefined,
+    formatPattern: string = 'PPP' // Default: e.g. "Sep 26, 2026"
+): string {
+    if (!dateInput) return '';
+
+    const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
+
+    if (!isValid(date)) return '';
+
+    return format(date, formatPattern);
+}
+
+/**
+ * Format ISO 8601 timestamps (e.g. "2026-09-26T15:00:00Z") for entry tables and cards
+ */
+export function formatDateTime(isoString: string): string {
+    return formatDate(isoString, 'MMM d, yyyy • h:mm a'); // e.g. "Sep 26, 2026 • 3:00 PM"
+}
+
+/**
+ * Format ISO full dates (e.g. "2026-09-26")
+ */
+export function formatFullDate(dateString: string): string {
+    return formatDate(dateString, 'MMM d, yyyy'); // e.g. "Sep 26, 2026"
+}
+
+/**
+ * Convert user Go-duration strings ("15m30s", "28s") into human-friendly UI text
+ */
+export function formatGoDuration(durationStr: string): string {
+    if (!durationStr) return '';
+
+    // Go durations support decimals and ns/us/µs/ms/s/m/h units.
+    const match = durationStr.match(
+        /^([+-]?)(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+$/
+    );
+    if (!match) return durationStr;
+
+    const [, sign] = match;
+    const body = durationStr.slice(sign.length).replace(/μs/g, 'µs');
+    const parts = body.match(/(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|ms|s|m|h)/g);
+
+    return parts ? `${sign}${parts.join(' ')}` : durationStr;
+}
+
+/**
+ * Format a protobuf timestamp (or a date found in entry data) for entry cards and tables.
+ */
 export function formatCreatedAt(
-  createdAt?: any,
-  fallbackData?: string | Record<string, any>
+    createdAt?: unknown,
+    fallbackData?: string | Record<string, unknown>
 ): FormattedTimestamp {
-  let ms: number | null = null;
+    let date = toDate(createdAt);
 
-  if (createdAt !== null && createdAt !== undefined) {
-    // A. Plain number (Unix timestamp in milliseconds or seconds)
-    if (typeof createdAt === 'number') {
-      if (createdAt > 1e11) {
-        ms = createdAt;
-      } else if (createdAt > 0) {
-        ms = createdAt * 1000;
-      }
-    }
-    // B. BigInt (Unix timestamp in seconds or milliseconds)
-    else if (typeof createdAt === 'bigint') {
-      const num = Number(createdAt);
-      if (num > 1e11) {
-        ms = num;
-      } else if (num > 0) {
-        ms = num * 1000;
-      }
-    }
-    // C. Protobuf Timestamp object or WKT representation ({ seconds, nanos } or toDate() method)
-    else if (typeof createdAt === 'object') {
-      if (typeof createdAt.toDate === 'function') {
+    if (!date && fallbackData) {
         try {
-          const d = createdAt.toDate();
-          if (d instanceof Date && !isNaN(d.getTime())) {
-            ms = d.getTime();
-          }
-        } catch { }
-      }
-
-      if (ms === null && ('seconds' in createdAt || 'seconds_' in createdAt)) {
-        const rawSec = createdAt.seconds ?? createdAt.seconds_;
-        const rawNanos = createdAt.nanos ?? createdAt.nanos_ ?? 0;
-        const sec = typeof rawSec === 'bigint' ? Number(rawSec) : Number(rawSec);
-        if (!isNaN(sec) && sec > 0) {
-          ms = sec * 1000 + Math.floor(Number(rawNanos) / 1e6);
+            const data = typeof fallbackData === 'string' ? JSON.parse(fallbackData) : fallbackData;
+            const dateKeys = ['created_at', 'createdAt', 'timestamp', 'date', 'recorded_at', 'date_time'];
+            for (const key of dateKeys) {
+                date = toDate(data[key]);
+                if (date) break;
+            }
+        } catch {
+            // Ignore malformed entry data and fall back to the generic label.
         }
-      }
     }
-    // D. ISO string / RFC3339 / SQLite datetime string (e.g. "2026-09-29 18:00:00" or "2026-09-29T18:00:00Z")
-    else if (typeof createdAt === 'string' && createdAt.trim().length > 0) {
-      const cleanStr = createdAt.trim();
-      // If sqlite format without 'T' or timezone (YYYY-MM-DD HH:MM:SS), normalize to ISO
-      const normalizedStr = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/.test(cleanStr)
-        ? `${cleanStr.replace(' ', 'T')}Z`
-        : cleanStr;
-      const parsed = Date.parse(normalizedStr);
-      if (!isNaN(parsed) && parsed > 0) {
-        ms = parsed;
-      }
-    }
-  }
 
-  // Fallback: check inside fallbackData JSON for any timestamp/date fields
-  if (ms === null && fallbackData) {
-    try {
-      const dataObj =
-        typeof fallbackData === 'string' ? JSON.parse(fallbackData) : fallbackData;
-      const possibleDateFields = [
-        'created_at',
-        'createdAt',
-        'timestamp',
-        'date',
-        'recorded_at',
-        'date_time',
-      ];
-      for (const f of possibleDateFields) {
-        if (dataObj[f]) {
-          const raw = String(dataObj[f]);
-          const normalized = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/.test(raw)
-            ? `${raw.replace(' ', 'T')}Z`
-            : raw;
-          const parsed = Date.parse(normalized);
-          if (!isNaN(parsed) && parsed > 0) {
-            ms = parsed;
-            break;
-          }
+    if (!date) return { relative: 'Recent', formatted: 'Recent' };
+
+    const formatted = format(date, 'MMM d, yyyy, HH:mm');
+    const elapsedSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    let relative = formatted;
+
+    if (elapsedSeconds >= 0 && elapsedSeconds < 60) {
+        relative = 'Just now';
+    } else if (elapsedSeconds >= 60 && elapsedSeconds < 3600) {
+        relative = `${Math.floor(elapsedSeconds / 60)}m ago`;
+    } else if (elapsedSeconds >= 3600 && elapsedSeconds < 86400) {
+        relative = `${Math.floor(elapsedSeconds / 3600)}h ago`;
+    } else if (elapsedSeconds >= 86400 && elapsedSeconds < 604800) {
+        relative = `${Math.floor(elapsedSeconds / 86400)}d ago`;
+    }
+
+    return { relative, formatted };
+}
+
+function toDate(value: unknown): Date | null {
+    if (value instanceof Date) return isValid(value) ? value : null;
+
+    if (typeof value === 'number' || typeof value === 'bigint') {
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) return null;
+        const milliseconds = Math.abs(numericValue) > 1e11 ? numericValue : numericValue * 1000;
+        const date = new Date(milliseconds);
+        return isValid(date) ? date : null;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+        const normalized = value.trim().replace(
+            /^(\d{4}-\d{2}-\d{2})\s(\d{2}:\d{2}:\d{2})$/,
+            '$1T$2Z'
+        );
+        const date = parseISO(normalized);
+        return isValid(date) ? date : null;
+    }
+
+    if (value && typeof value === 'object') {
+        const timestamp = value as {
+            seconds?: number | string | bigint;
+            seconds_?: number | string | bigint;
+            nanos?: number;
+            nanos_?: number;
+            toDate?: () => Date;
+        };
+
+        if (typeof timestamp.toDate === 'function') {
+            try {
+                const date = timestamp.toDate();
+                if (date instanceof Date && isValid(date)) return date;
+            } catch {
+                // Fall through to the seconds/nanos representation.
+            }
         }
-      }
-    } catch { }
-  }
 
-  if (ms === null || isNaN(ms) || ms <= 0) {
-    return { relative: 'Recent', formatted: 'Recent' };
-  }
+        const rawSeconds = timestamp.seconds ?? timestamp.seconds_;
+        if (rawSeconds !== undefined) {
+            const seconds = Number(rawSeconds);
+            const nanos = Number(timestamp.nanos ?? timestamp.nanos_ ?? 0);
+            if (Number.isFinite(seconds) && Number.isFinite(nanos)) {
+                const date = new Date(seconds * 1000 + Math.floor(nanos / 1e6));
+                return isValid(date) ? date : null;
+            }
+        }
+    }
 
-  const date = new Date(ms);
-
-  const formatted = date.toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  const now = Date.now();
-  const diffSec = Math.floor((now - ms) / 1000);
-
-  let relative = formatted;
-  if (diffSec >= 0 && diffSec < 60) {
-    relative = 'Just now';
-  } else if (diffSec >= 60 && diffSec < 3600) {
-    const mins = Math.floor(diffSec / 60);
-    relative = `${mins}m ago`;
-  } else if (diffSec >= 3600 && diffSec < 86400) {
-    const hours = Math.floor(diffSec / 3600);
-    relative = `${hours}h ago`;
-  } else if (diffSec >= 86400 && diffSec < 604800) {
-    const days = Math.floor(diffSec / 86400);
-    relative = `${days}d ago`;
-  }
-
-  return { relative, formatted };
+    return null;
 }

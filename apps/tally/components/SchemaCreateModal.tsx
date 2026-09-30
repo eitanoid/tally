@@ -47,15 +47,7 @@ export function SchemaCreateModal({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [openMenuFieldId, setOpenMenuFieldId] = useState<string | null>(null);
-  const [fields, setFields] = useState<DynamicField[]>([
-    {
-      id: '1',
-      name: 'count',
-      description: 'Primary counter',
-      format: FieldFormat.INTEGER,
-      required: true,
-    },
-  ]);
+  const [fields, setFields] = useState<DynamicField[]>([]);
 
   const addField = () => {
     setFields((prev) => [

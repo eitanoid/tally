@@ -2,16 +2,18 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Surface, Text, IconButton, Menu, useTheme } from 'react-native-paper';
-import { Entry } from '../generated/tally/v1/service_pb';
+import { Entry, FieldFormat } from '../generated/tally/v1/service_pb';
 import { formatCreatedAt } from '../src/utils/date';
+import { formatFieldValue } from '../src/fields/fieldFormat';
 
 interface EntryCardProps {
   entry: Entry;
+  fieldFormats?: Record<string, FieldFormat>;
   onEdit?: (entry: Entry) => void;
   onDelete?: (entry: Entry) => void;
 }
 
-export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
+export function EntryCard({ entry, fieldFormats = {}, onEdit, onDelete }: EntryCardProps) {
   const theme = useTheme();
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -82,7 +84,7 @@ export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
             {key}:
           </Text>
           <Text variant="bodyMedium" style={[styles.dataVal, { color: theme.colors.onSurfaceVariant }]}>
-            {String(val)}
+            {formatFieldValue(val, fieldFormats[key] ?? FieldFormat.UNSPECIFIED)}
           </Text>
         </View>
       ))}

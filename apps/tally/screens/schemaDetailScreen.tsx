@@ -2,13 +2,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ScrollView, ActivityIndicator, BackHandler, Alert } from 'react-native';
 import { Text, FAB, Button, useTheme } from 'react-native-paper';
-import { Schema, Entry, ResponseCode } from '../generated/tally/v1/service_pb';
+import { Schema, Entry, FieldFormat, ResponseCode } from '../generated/tally/v1/service_pb';
 import { listEntries, recordEntry, updateEntry, deleteEntry, deleteTally } from '../modules/tally-backend';
 import { DynamicEntryFormModal } from '../components/DynamicEntryFormModal';
 import { DeleteConfirmationDialog } from '../components/DeleteConfirmationDialog';
 import { SchemaDetailHeader } from '../components/SchemaDetailHeader';
 import { EntryCard } from '../components/EntryCard';
 import { EntryTable } from '../components/EntryTable';
+import { inferFieldFormatFromProperty } from '../src/fields/fieldFormat';
 
 interface SchemaDetailScreenProps {
   schema: Schema;
@@ -76,10 +77,17 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
 
   // Parse JSON Schema properties for display and table headers
   let schemaProps: string[] = [];
+  let fieldFormats: Record<string, FieldFormat> = {};
   try {
     const parsed = JSON.parse(schema.jsonSchema);
     if (parsed.properties) {
       schemaProps = Object.keys(parsed.properties);
+      fieldFormats = Object.fromEntries(
+        Object.entries(parsed.properties).map(([key, property]) => [
+          key,
+          inferFieldFormatFromProperty(property as { type?: string; format?: string }),
+        ])
+      );
     }
   } catch (e) {
     console.error('Error parsing schema JSON:', e);
@@ -215,6 +223,7 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
             <EntryCard
               key={entry.entryId}
               entry={entry}
+              fieldFormats={fieldFormats}
               onEdit={handleEditEntry}
               onDelete={handleDeleteEntry}
             />
@@ -224,6 +233,7 @@ export function SchemaDetailScreen({ schema, onBack }: SchemaDetailScreenProps) 
         <EntryTable
           entries={entries}
           schemaProps={schemaProps}
+          fieldFormats={fieldFormats}
           onEdit={handleEditEntry}
           onDelete={handleDeleteEntry}
         />

@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { StyleSheet, ScrollView, View } from 'react-native';
 import { DataTable, IconButton, Menu, useTheme } from 'react-native-paper';
-import { Entry } from '../generated/tally/v1/service_pb';
+import { Entry, FieldFormat } from '../generated/tally/v1/service_pb';
 import { formatCreatedAt } from '../src/utils/date';
+import { formatFieldValue } from '../src/fields/fieldFormat';
 
 interface EntryTableProps {
   entries: Entry[];
   schemaProps: string[];
+  fieldFormats?: Record<string, FieldFormat>;
   onEdit?: (entry: Entry) => void;
   onDelete?: (entry: Entry) => void;
 }
@@ -15,6 +17,7 @@ interface EntryTableProps {
 export function EntryTable({
   entries,
   schemaProps,
+  fieldFormats = {},
   onEdit,
   onDelete,
 }: EntryTableProps) {
@@ -74,7 +77,9 @@ export function EntryTable({
                 key={prop}
                 style={isWide ? styles.dataColFixed : styles.dataColFlex}
               >
-                {dataObj[prop] !== undefined ? String(dataObj[prop]) : '-'}
+                {dataObj[prop] !== undefined
+                  ? formatFieldValue(dataObj[prop], fieldFormats[prop] ?? FieldFormat.UNSPECIFIED)
+                  : '-'}
               </DataTable.Cell>
             ))}
             {(onEdit || onDelete) && (
