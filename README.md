@@ -1,6 +1,8 @@
 # Tally
 
-Tally is a local, schema-enforced personal data engine for tracking literally anything.
+Tally is a local, schema-enforced personal data engine for tracking literally anything. 
+
+Tally alloys users to define and record custom trackers (or Tallies) such as a "Reading Tracker" with fields like "book name" and "pages read".
 
 UI: Expo (React Native) + react-native-paper
 Backend: Go + SQLite, compiled into native libraries via gomobile
@@ -67,7 +69,7 @@ $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
 <details>
 <summary><h3>Expansion Details</h3></summary>
 
-To expand the featureset of the app (from the backend), these are the required steps:
+To expand the capabilities of the Go/Typescipt bridge you must follow these steps:
 
 1 .Define your new request and response payloads in service.proto:
 ```proto
@@ -158,24 +160,6 @@ export async function newFeature(
 }
 ```
 </details>
-
-## Future features / TODOs
-
-- full UI implementation:
-  - adding tests to typescript layer
-  - adding end-to-end tests for Go backend
-- new backend features:
-  - users should be able to edit the fields in a Tally after creating it. The
-    support for versioned schemas already exists but it needs more work. An
-    open question is how to treat entries that belong to an old schema?
-  - not sure how to do this, but support for local DB backups in android
-  - support soft deletes for entries and schemas
-  - rename schema name to tally name in UI
-  - transform and download CSV with `expo-sharing` and `expo-file-system`
-  - sort by name, created by changed at etc in schema view
-  - use schema in entry card to provide correct field names and not just field keys
-  - figureout how to deterministically provide field ordering
-  - allow for 0 field schema creation in UI
 
 ## Acknowledgement
 
