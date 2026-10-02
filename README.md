@@ -2,7 +2,7 @@
 
 Tally is a local, schema-enforced personal data engine for tracking literally anything. 
 
-Tally alloys users to define and record custom trackers (or Tallies) such as a "Reading Tracker" with fields like "book name" and "pages read".
+Tally allows users to define and record custom trackers (or Tallies) such as a "Reading Tracker" with fields like "book name" and "pages read".
 
 <p float="left">
 <img width="49%" alt="image" src="https://github.com/user-attachments/assets/e802e6fd-a6b1-42d4-94c4-ba5627f73167" />
