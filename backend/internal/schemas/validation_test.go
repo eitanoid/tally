@@ -21,7 +21,7 @@ func TestValidateDateTime(t *testing.T) {
 			name:    "valid RFC3339 with offset",
 			field:   "reading_started",
 			value:   "2026-09-26T13:00:00+01:00",
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:    "invalid format SQL style date",
@@ -116,10 +116,10 @@ func TestValidateTime(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid time with positive timezone offset",
+			name:    "invalid time with positive timezone offset",
 			field:   "dose_time",
 			value:   "15:30:00+01:00",
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:    "invalid time missing timezone offset",

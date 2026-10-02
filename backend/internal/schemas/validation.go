@@ -33,7 +33,7 @@ var propertyValidator = map[string]func(string, any) error{
 	"go-duration": validateGoDuration,
 }
 
-// validateDateTime enforces full RFC3339 timestamps (e.g. 2026-09-26T15:00:00Z)
+// validateDateTime enforces full RFC3339 timestamps (e.g. 2026-09-26T15:00:00Z) at UTC
 func validateDateTime(field string, val any) error {
 	strVal, ok := val.(string)
 	if !ok {
@@ -41,8 +41,14 @@ func validateDateTime(field string, val any) error {
 	}
 
 	// Enforce strict RFC3339 / ISO-8601 parsing
-	if _, err := time.Parse(time.RFC3339, strVal); err != nil {
+	t, err := time.Parse(time.RFC3339, strVal)
+	if err != nil {
 		return fmt.Errorf("invalid timestamp format '%s' (expected RFC3339, e.g. 2026-09-26T12:00:00Z)", strVal)
+	}
+
+	_, offset := t.Zone()
+	if offset != 0 {
+		return fmt.Errorf("field '%s' must be in UTC, got offset of %d seconds in '%s'", field, offset, strVal)
 	}
 	return nil
 }
@@ -60,15 +66,15 @@ func validateDate(field string, val any) error {
 	return nil
 }
 
-// validateTime enforces ISO-8601 time-of-day with timezone offset (e.g. 14:30:00Z or 15:30:00+01:00)
+// validateTime enforces ISO-8601 time-of-day no timezone offset (e.g. 14:30:00Z and not 15:30:00+01:00)
 func validateTime(field string, val any) error {
 	strVal, ok := val.(string)
 	if !ok {
 		return fmt.Errorf("field '%s' must be a string", field)
 	}
-	const timeLayout = "15:04:05Z07:00"
+	const timeLayout = "15:04:05Z"
 	if _, err := time.Parse(timeLayout, strVal); err != nil {
-		return fmt.Errorf("field '%s' has invalid time format '%s' (expected 'HH:MM:SSZ', e.g. '14:30:00Z' or '15:30:00+01:00')", field, strVal)
+		return fmt.Errorf("field '%s' has invalid time format '%s' (expected 'HH:MM:SSZ', e.g. '14:30:00Z')", field, strVal)
 	}
 	return nil
 }
