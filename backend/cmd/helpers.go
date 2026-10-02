@@ -32,10 +32,10 @@ func PrintTable[T any](w io.Writer, headers string, items []T, formatRow func(it
 	// Separate header from body to draw the divider line
 	header, body, _ := strings.Cut(buf.String(), "\n")
 
-	fmt.Fprintln(w, header)
-	fmt.Fprintln(w, strings.Repeat("-", len(header)))
+	_, _ = fmt.Fprintln(w, header)
+	_, _ = fmt.Fprintln(w, strings.Repeat("-", len(header)))
 	if body != "" {
-		fmt.Fprint(w, body)
+		_, _ = fmt.Fprint(w, body)
 	}
 
 	return nil

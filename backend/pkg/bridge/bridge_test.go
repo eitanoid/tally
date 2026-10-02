@@ -11,13 +11,12 @@ import (
 
 func setupTestBridge(t *testing.T) {
 	t.Helper()
-	bridge.Close()
+	_ = bridge.Close()
 	// Initialize Bridge with in-memory SQLite database
 	err := bridge.New(":memory:")
 	if err != nil {
 		t.Fatalf("failed to initialize test bridge: %v", err)
 	}
-	return
 }
 
 func TestBridge_CreateSchema(t *testing.T) {

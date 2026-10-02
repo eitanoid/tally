@@ -11,12 +11,6 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
-// decisions to be made:
-//
-// naming conventions for fields? allow spaces? repalce spaces with - or _?
-// default fields like `added` might be worth making an uncommon name like `__added__` and interpreting that later since `added` could be a common name for a field
-// add logged at to db entry instead of schema
-
 // SupportedType represents all supported field formats for the caller (e.g. string, date-time, integer).
 type SupportedType string
 

@@ -31,7 +31,7 @@ var schemaListCmd = &cobra.Command{
 			return nil
 		}
 
-		PrintTable(cmd.OutOrStdout(), "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA", list, func(s schemas.TallySchema) string {
+		_ = PrintTable(cmd.OutOrStdout(), "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA", list, func(s schemas.TallySchema) string {
 			return fmt.Sprintf("%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw[:100]+"...")
 
 		})
@@ -54,7 +54,7 @@ var schemaGetCmd = &cobra.Command{
 			return err
 		}
 
-		PrintTable(cmd.OutOrStdout(), "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA", []*schemas.TallySchema{s}, func(s *schemas.TallySchema) string {
+		_ = PrintTable(cmd.OutOrStdout(), "TALLY ID\tVERSION\tNAME\tCREATED AT\tSCHEMA", []*schemas.TallySchema{s}, func(s *schemas.TallySchema) string {
 			return fmt.Sprintf("%s\tv%d\t%s\t%s\t%s", s.TallyID, s.Version, s.Name, s.CreatedAt.Format(time.RFC3339), s.JSONSchemaRaw)
 		})
 		return nil

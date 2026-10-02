@@ -365,7 +365,9 @@ func (c *SQLiteClient) DeleteTally(ctx context.Context, tallyID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	// soft-delete the parent schemas
 	const deleteSchemaQuery = `

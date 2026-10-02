@@ -15,15 +15,16 @@ type TallyService struct {
 	repo repository.Repository
 }
 
-// NewTallyService creates a new TallyService
+// NewTallyService creates a new TallyService.
 func NewTallyService(repo repository.Repository) *TallyService {
 	return &TallyService{
 		repo: repo,
 	}
 }
 
-func (t *TallyService) Close() error {
-	return t.repo.Close()
+// Close stops the service and releases the database.
+func (s *TallyService) Close() error {
+	return s.repo.Close()
 }
 
 // PaginatedResult represents a pagination collection of tally entries.
@@ -126,6 +127,7 @@ func (s *TallyService) UpdateEntry(ctx context.Context, entryID string, patchDat
 	return updatedEntry, nil
 }
 
+// DeleteEntry soft deletes an entry.
 func (s *TallyService) DeleteEntry(ctx context.Context, entryID string) error {
 	if err := s.repo.DeleteEntry(ctx, entryID); err != nil {
 		return fmt.Errorf("failed to delete entry: %w ", err)
@@ -133,6 +135,7 @@ func (s *TallyService) DeleteEntry(ctx context.Context, entryID string) error {
 	return nil
 }
 
+// DeleteTally soft deletes all schemas and entries corresponding to a tally id.
 func (s *TallyService) DeleteTally(ctx context.Context, tallyID string) error {
 	if err := s.repo.DeleteTally(ctx, tallyID); err != nil {
 		return fmt.Errorf("failed to delete tally: %w ", err)

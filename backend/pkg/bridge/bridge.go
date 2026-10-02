@@ -147,6 +147,7 @@ func ListSchemas(requestBytes []byte) []byte {
 		requestBytes,
 		&tallyv1.ListSchemasRequest{},
 		func(st *bridge, req *tallyv1.ListSchemasRequest) (*tallyv1.ListSchemasResponse, error) {
+			_ = req // req is empty
 			schemaList, err := st.service.ListSchemas(st.ctx)
 			if err != nil {
 				return nil, err
