@@ -13,6 +13,20 @@ UI: Expo (React Native) + react-native-paper
 Backend: Go + SQLite, compiled into native libraries via gomobile
 Bridge: Binary Protobuf over FFI (Kotlin JNI for Android)
 
+<details open>
+<summary><h3>Architecture</h3></summary>
+
+This project is built as an Android app with a Golang backend owning an SQLite
+database (with 2 tables), and an Expo / React Native frontend. The communication
+between the Go app and React are done through a React Native Plugin consuming
+JNI bindings generated using `gomobile`. To ensure predictability and
+type-safety through language boundries, communications are defined using
+protobuf, and passed through as serialised binary.
+
+![Tally Architecture & Flow](./.github/assets/architecture.svg)
+
+</details>
+
 <details>
 <summary><h3>CLI demo</h3></summary>
 
@@ -69,7 +83,6 @@ $ tally entry list -t 3JyNWHK6JYV1TE5ufVpssbYxFe8
 ```
 
 </details>
-
 
 <details>
 <summary><h3>Expansion Details</h3></summary>
