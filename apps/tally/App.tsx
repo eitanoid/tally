@@ -207,6 +207,7 @@ function MainAppRouter() {
           description: f.description,
           type: f.format,
           required: f.required,
+          enumValues: f.enumValues,
         })),
       });
 

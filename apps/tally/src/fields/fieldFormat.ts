@@ -78,6 +78,18 @@ export const FIELD_FORMAT_OPTIONS: FieldFormatInfo[] = [
         example: '15m30s',
     },
     {
+        value: FieldFormat.ONE_OF,
+        label: 'One of',
+        icon: 'format-list-bulleted',
+        description: 'Choose one allowed value',
+    },
+    {
+        value: FieldFormat.MANY_OF,
+        label: 'Many of',
+        icon: 'format-list-checks',
+        description: 'Choose one or more allowed values',
+    },
+    {
         value: FieldFormat.UNSPECIFIED,
         label: 'Unspecified',
         icon: 'help-circle-outline',
@@ -96,7 +108,11 @@ export function getFieldFormatInfo(format: FieldFormat): FieldFormatInfo {
 export function inferFieldFormatFromProperty(prop: {
     type?: string;
     format?: string;
+    enum?: unknown[];
+    items?: { enum?: unknown[] };
 }): FieldFormat {
+    if (prop.type === 'array' && prop.items?.enum) return FieldFormat.MANY_OF;
+    if (prop.enum) return FieldFormat.ONE_OF;
     if (prop.type === 'boolean') return FieldFormat.BOOLEAN;
     if (prop.type === 'integer') return FieldFormat.INTEGER;
     if (prop.type === 'number') return FieldFormat.NUMBER;
@@ -133,6 +149,9 @@ export function formatFieldValue(value: any, format: FieldFormat): string {
         case FieldFormat.INTEGER:
         case FieldFormat.NUMBER:
             return String(value);
+
+        case FieldFormat.MANY_OF:
+            return Array.isArray(value) ? value.join(', ') : String(value);
 
         default:
             return String(value);

@@ -32,6 +32,7 @@ export interface FieldDefinition {
     description?: string;
     type: FieldFormat;
     required?: boolean;
+    enumValues?: string[];
 }
 
 export interface CreateSchemaInput {
@@ -42,6 +43,7 @@ export interface CreateSchemaInput {
         description?: string;
         type: FieldFormat;
         required?: boolean;
+        enumValues?: string[];
     }[];
 }
 
@@ -55,6 +57,7 @@ export async function executeCreateSchema(
         description: f.description ?? '',
         type: f.type,
         required: f.required ?? false,
+        enumValues: f.enumValues ?? [],
     }));
 
     // 2. Call the createSchema RPC through the FFI module

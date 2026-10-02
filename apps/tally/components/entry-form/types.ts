@@ -6,6 +6,9 @@ export interface Property {
   format?: string;
   title?: string;
   description?: string;
+  enum?: (string | number)[];
+  items?: { enum?: (string | number)[] };
+  minItems?: number;
 }
 
 export interface ParsedJsonSchema {
@@ -22,6 +25,8 @@ export type FieldInputType =
   | 'date'
   | 'time'
   | 'duration'
+  | 'one-of'
+  | 'many-of'
   | 'string';
 
 export interface DynamicEntryFormModalProps {

@@ -1,7 +1,7 @@
 // vi: set ts=2 sw=2
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { TextInput, Switch, Text, HelperText, Divider } from 'react-native-paper';
+import { TextInput, Switch, Text, HelperText, Divider, Button, Menu, Checkbox, Chip } from 'react-native-paper';
 import { Property, FieldInputType } from './types';
 import { getFieldInputType } from './validation';
 
@@ -22,8 +22,125 @@ export function FieldInput({
   isRequired,
   onChange,
 }: FieldInputProps) {
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [anchorWidth, setAnchorWidth] = useState(0);
   const fieldType: FieldInputType = getFieldInputType(property);
   const label = `${property.title || fieldKey}${isRequired ? ' *' : ''}`;
+  const menuContentStyle = [
+    styles.enumMenuContent,
+    { minWidth: anchorWidth },
+  ];
+
+  if (fieldType === 'one-of') {
+    const options = (property.enum ?? []).map(String);
+    return (
+      <View style={styles.fieldWrapper}>
+        <Text variant="bodyLarge" style={styles.enumLabel}>{label}</Text>
+        {property.description ? <HelperText type="info">{property.description}</HelperText> : null}
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          contentStyle={menuContentStyle}
+          anchor={
+            <Button
+              mode="outlined"
+              style={styles.enumSelectButton}
+              onLayout={(event) => setAnchorWidth(event.nativeEvent.layout.width)}
+              onPress={() => setMenuVisible(true)}
+            >
+              {value ? String(value) : 'Select a value'}
+            </Button>
+          }
+        >
+          <Menu.Item
+            title="Clear selection"
+            disabled={value === undefined || value === null || value === ''}
+            onPress={() => {
+              onChange(fieldKey, undefined);
+              setMenuVisible(false);
+            }}
+          />
+          {options.map((option) => (
+            <Menu.Item
+              key={option}
+              title={option}
+              trailingIcon={value === option ? 'check' : undefined}
+              onPress={() => {
+                onChange(fieldKey, option);
+                setMenuVisible(false);
+              }}
+            />
+          ))}
+        </Menu>
+        {error ? <HelperText type="error">{error}</HelperText> : null}
+        <Divider style={styles.divider} />
+      </View>
+    );
+  }
+
+  if (fieldType === 'many-of') {
+    const selectedValues: string[] = Array.isArray(value) ? value.map(String) : [];
+    const options = (property.items?.enum ?? []).map(String);
+    const toggleValue = (option: string) => {
+      onChange(
+        fieldKey,
+        selectedValues.includes(option)
+          ? selectedValues.filter((selected) => selected !== option)
+          : [...selectedValues, option]
+      );
+    };
+
+    return (
+      <View style={styles.fieldWrapper}>
+        <Text variant="bodyLarge" style={styles.enumLabel}>{label}</Text>
+        {property.description ? <HelperText type="info">{property.description}</HelperText> : null}
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          contentStyle={menuContentStyle}
+          anchor={
+            <Button
+              mode="outlined"
+              style={styles.enumSelectButton}
+              onLayout={(event) => setAnchorWidth(event.nativeEvent.layout.width)}
+              onPress={() => setMenuVisible(true)}
+              icon="chevron-down"
+            >
+              {selectedValues.length > 0
+                ? `${selectedValues.length} selected`
+                : 'Select values'}
+            </Button>
+          }
+        >
+          {options.map((option) => (
+            <Checkbox.Item
+              key={option}
+              label={option}
+              status={selectedValues.includes(option) ? 'checked' : 'unchecked'}
+              onPress={() => toggleValue(option)}
+              style={styles.checkboxItem}
+            />
+          ))}
+        </Menu>
+        {selectedValues.length > 0 ? (
+          <View style={styles.selectedChips}>
+            {selectedValues.map((selected) => (
+              <Chip
+                key={selected}
+                compact
+                onClose={() => toggleValue(selected)}
+                style={styles.selectedChip}
+              >
+                {selected}
+              </Chip>
+            ))}
+          </View>
+        ) : null}
+        {error ? <HelperText type="error">{error}</HelperText> : null}
+        <Divider style={styles.divider} />
+      </View>
+    );
+  }
 
   const setFieldToNow = () => {
     const now = new Date();
@@ -143,6 +260,27 @@ const styles = StyleSheet.create({
   labelCol: {
     flex: 1,
     paddingRight: 12,
+  },
+  enumLabel: {
+    marginBottom: 4,
+  },
+  enumSelectButton: {
+    width: '100%',
+  },
+  enumMenuContent: {
+    borderRadius: 0,
+  },
+  checkboxItem: {
+    paddingHorizontal: 0,
+  },
+  selectedChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  selectedChip: {
+    marginRight: 6,
+    marginBottom: 6,
   },
   description: {
     opacity: 0.6,

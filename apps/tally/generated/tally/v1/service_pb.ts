@@ -179,6 +179,8 @@ export type SchemaRequestField = Message<"tally.v1.SchemaRequestField"> & {
   required: boolean;
 
   /**
+   * field only used when type is TYPE ONE_OF or MANY_OF
+   *
    * @generated from field: repeated string enum_values = 5;
    */
   enumValues: string[];

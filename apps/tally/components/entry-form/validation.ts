@@ -2,6 +2,8 @@
 import { ParsedJsonSchema, FieldInputType, Property } from './types';
 
 export function getFieldInputType(prop: Property): FieldInputType {
+  if (prop.type === 'array' && prop.items?.enum) return 'many-of';
+  if (prop.enum) return 'one-of';
   if (prop.type === 'boolean') return 'boolean';
   if (prop.type === 'integer') return 'integer';
   if (prop.type === 'number') return 'number';
@@ -32,6 +34,29 @@ export function validateAndFormatEntryData(
     const fieldType = getFieldInputType(prop);
     const isRequired = requiredList.includes(key);
     const rawVal = formData[key];
+
+    if (fieldType === 'one-of' || fieldType === 'many-of') {
+      const allowedValues = (fieldType === 'one-of' ? prop.enum : prop.items?.enum) ?? [];
+      const values = fieldType === 'one-of'
+        ? (rawVal === undefined || rawVal === null || rawVal === '' ? [] : [String(rawVal)])
+        : Array.isArray(rawVal) ? rawVal.map(String) : [];
+
+      if (values.length === 0) {
+        if (isRequired || fieldType === 'many-of' && prop.minItems !== undefined && prop.minItems > 0) {
+          errors[key] = 'Choose at least one value';
+        }
+        continue;
+      }
+
+      if (values.some((value) => !allowedValues.includes(value))) {
+        errors[key] = 'Choose only from the allowed values';
+      } else if (fieldType === 'many-of' && new Set(values).size !== values.length) {
+        errors[key] = 'Values must be unique';
+      } else {
+        data[key] = fieldType === 'one-of' ? values[0] : values;
+      }
+      continue;
+    }
 
     // Boolean field handling
     if (fieldType === 'boolean') {
@@ -122,7 +147,7 @@ export function validateAndFormatEntryData(
         break;
       }
 
-      case 'string':
+    case 'string':
       default: {
         data[key] = strVal;
         break;
