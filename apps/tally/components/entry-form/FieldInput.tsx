@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { TextInput, Switch, Text, HelperText, Divider, Button, Menu, Checkbox, Chip } from 'react-native-paper';
+import { format, formatISO } from 'date-fns';
 import { Property, FieldInputType } from './types';
 import { getFieldInputType } from './validation';
 
@@ -145,12 +146,11 @@ export function FieldInput({
   const setFieldToNow = () => {
     const now = new Date();
     if (fieldType === 'date-time') {
-      onChange(fieldKey, now.toISOString().replace(/\.\d{3}Z$/, 'Z'));
+      onChange(fieldKey, formatISO(now));
     } else if (fieldType === 'date') {
       onChange(fieldKey, now.toISOString().split('T')[0]);
     } else if (fieldType === 'time') {
-      const timePart = now.toISOString().split('T')[1].replace('Z', '').slice(0, 8);
-      onChange(fieldKey, timePart);
+      onChange(fieldKey, format(now, 'HH:mm:ss'));
     }
   };
 
@@ -183,14 +183,14 @@ export function FieldInput({
   switch (fieldType) {
     case 'integer':
       keyboardType = 'number-pad';
-      placeholder = 'e.g. 42';
+      placeholder = 'Enter a whole number.';
       break;
     case 'number':
       keyboardType = 'decimal-pad';
-      placeholder = 'e.g. 3.14';
+      placeholder = 'Enter a number.';
       break;
     case 'date-time':
-      placeholder = 'YYYY-MM-DDTHH:mm:ssZ';
+      placeholder = 'YYYY-MM-DDTHH:mm:ss±HH:mm';
       rightIcon = (
         <TextInput.Icon
           icon="clock-outline"
@@ -219,7 +219,7 @@ export function FieldInput({
       );
       break;
     case 'duration':
-      placeholder = 'e.g. 1h 30m or 45s';
+      placeholder = '5h2m3s';
       break;
     case 'string':
     default:

@@ -1,5 +1,6 @@
 // vi: set ts=2 sw=2
 import { ParsedJsonSchema, FieldInputType, Property } from './types';
+import { format, isValid, parseISO } from 'date-fns';
 
 export function getFieldInputType(prop: Property): FieldInputType {
   if (prop.type === 'array' && prop.items?.enum) return 'many-of';
@@ -96,11 +97,15 @@ export function validateAndFormatEntryData(
       }
 
       case 'date-time': {
-        const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
-        if (!isoRegex.test(strVal) || isNaN(Date.parse(strVal))) {
-          errors[key] = 'Must be ISO format (e.g. 2026-09-29T12:00:00Z)';
+        const dateTimeRegex =
+          /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?$/;
+        const parsedDateTime = parseISO(strVal);
+        if (!dateTimeRegex.test(strVal) || !isValid(parsedDateTime)) {
+          errors[key] = 'Use YYYY-MM-DDTHH:mm:ss with an optional timezone offset';
         } else {
-          data[key] = strVal;
+          const utcDateTime = parsedDateTime.toISOString().replace(/\.\d{3}Z$/, '');
+          const fraction = strVal.match(/\.\d+(?=(?:Z|[+-]\d{2}:\d{2})?$)/)?.[0] ?? '';
+          data[key] = `${utcDateTime}${fraction}Z`;
         }
         break;
       }
@@ -122,13 +127,13 @@ export function validateAndFormatEntryData(
       }
 
       case 'time': {
-        const timeRegex = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z|[+-][01]\d:[0-5]\d)?$/;
-        if (!timeRegex.test(strVal)) {
+        const timeRegex = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)?$/;
+        const localDate = format(new Date(), 'yyyy-MM-dd');
+        const parsedTime = parseISO(`${localDate}T${strVal}`);
+        if (!timeRegex.test(strVal) || !isValid(parsedTime)) {
           errors[key] = 'Must be HH:mm:ss format (e.g. 14:30:00)';
         } else {
-          // Normalize: append Z if no timezone offset present
-          const finalTime = /(?:Z|[+-]\d{2}:\d{2})$/.test(strVal) ? strVal : `${strVal}Z`;
-          data[key] = finalTime;
+          data[key] = `${parsedTime.toISOString().slice(11, 19)}Z`;
         }
         break;
       }
