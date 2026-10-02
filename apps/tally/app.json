@@ -11,19 +11,6 @@
             "bundleIdentifier": "com.anonymous.tally"
         },
         "android": {
-            "plugins": [
-                [
-                    "expo-build-properties",
-                    {
-                        "android": {
-                            "abiFilters": [
-                                "arm64-v8a",
-                                "armeabi-v7a"
-                            ]
-                        }
-                    }
-                ]
-            ],
             "adaptiveIcon": {
                 "backgroundColor": "#E6F4FE",
                 "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,10 +27,23 @@
             }
         },
         "plugins": [
-            "expo-secure-store",
-            {
-                "configureAndroidBackup": true
-            }
+            [
+                "expo-secure-store",
+                {
+                    "configureAndroidBackup": true
+                }
+            ],
+            [
+                "expo-build-properties",
+                {
+                    "android": {
+                        "abiFilters": [
+                            "arm64-v8a",
+                            "armeabi-v7a"
+                        ]
+                    }
+                }
+            ]
         ]
     }
 }
