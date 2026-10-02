@@ -39,6 +39,7 @@ func TestCreateSchema(t *testing.T) {
 			buildFn: func() *schemas.SchemaRequest {
 				req := schemas.NewSchemaRequest("Water Intake", "Track daily hydration")
 				_ = req.WithField("ml", "", "number", true)
+				_ = req.WithEnumField("brand", "", "one-of", true, []string{"evian", "dasani"})
 				return req
 			},
 			wantErr: false,
