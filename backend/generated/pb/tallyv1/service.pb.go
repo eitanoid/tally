@@ -96,20 +96,24 @@ const (
 	FieldFormat_FIELD_FORMAT_DATE        FieldFormat = 6
 	FieldFormat_FIELD_FORMAT_TIME        FieldFormat = 7
 	FieldFormat_FIELD_FORMAT_DURATION    FieldFormat = 8
+	FieldFormat_FIELD_FORMAT_ONE_OF      FieldFormat = 9
+	FieldFormat_FIELD_FORMAT_MANY_OF     FieldFormat = 10
 )
 
 // Enum value maps for FieldFormat.
 var (
 	FieldFormat_name = map[int32]string{
-		0: "FIELD_FORMAT_UNSPECIFIED",
-		1: "FIELD_FORMAT_STRING",
-		2: "FIELD_FORMAT_INTEGER",
-		3: "FIELD_FORMAT_NUMBER",
-		4: "FIELD_FORMAT_BOOLEAN",
-		5: "FIELD_FORMAT_DATE_TIME",
-		6: "FIELD_FORMAT_DATE",
-		7: "FIELD_FORMAT_TIME",
-		8: "FIELD_FORMAT_DURATION",
+		0:  "FIELD_FORMAT_UNSPECIFIED",
+		1:  "FIELD_FORMAT_STRING",
+		2:  "FIELD_FORMAT_INTEGER",
+		3:  "FIELD_FORMAT_NUMBER",
+		4:  "FIELD_FORMAT_BOOLEAN",
+		5:  "FIELD_FORMAT_DATE_TIME",
+		6:  "FIELD_FORMAT_DATE",
+		7:  "FIELD_FORMAT_TIME",
+		8:  "FIELD_FORMAT_DURATION",
+		9:  "FIELD_FORMAT_ONE_OF",
+		10: "FIELD_FORMAT_MANY_OF",
 	}
 	FieldFormat_value = map[string]int32{
 		"FIELD_FORMAT_UNSPECIFIED": 0,
@@ -121,6 +125,8 @@ var (
 		"FIELD_FORMAT_DATE":        6,
 		"FIELD_FORMAT_TIME":        7,
 		"FIELD_FORMAT_DURATION":    8,
+		"FIELD_FORMAT_ONE_OF":      9,
+		"FIELD_FORMAT_MANY_OF":     10,
 	}
 )
 
@@ -489,6 +495,7 @@ type SchemaRequestField struct {
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Type          FieldFormat            `protobuf:"varint,3,opt,name=type,proto3,enum=tally.v1.FieldFormat" json:"type,omitempty"`
 	Required      bool                   `protobuf:"varint,4,opt,name=required,proto3" json:"required,omitempty"`
+	EnumValues    []string               `protobuf:"bytes,5,rep,name=enum_values,json=enumValues,proto3" json:"enum_values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -549,6 +556,13 @@ func (x *SchemaRequestField) GetRequired() bool {
 		return x.Required
 	}
 	return false
+}
+
+func (x *SchemaRequestField) GetEnumValues() []string {
+	if x != nil {
+		return x.EnumValues
+	}
+	return nil
 }
 
 type CreateSchemaRequest struct {
@@ -1086,8 +1100,8 @@ func (x *UpdateEntryRequest) GetPatchData() string {
 type UpdateEntryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UpdatedEntry  *Entry                 `protobuf:"bytes,1,opt,name=updated_entry,json=updatedEntry,proto3" json:"updated_entry,omitempty"`
-	Code          ResponseCode           `protobuf:"varint,6,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Code          ResponseCode           `protobuf:"varint,2,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1189,8 +1203,8 @@ func (x *DeleteTallyRequest) GetTallyId() string {
 
 type DeleteTallyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          ResponseCode           `protobuf:"varint,6,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Code          ResponseCode           `protobuf:"varint,1,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1285,8 +1299,8 @@ func (x *DeleteEntryRequest) GetEntryId() string {
 
 type DeleteEntryResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          ResponseCode           `protobuf:"varint,6,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Code          ResponseCode           `protobuf:"varint,1,opt,name=code,proto3,enum=tally.v1.ResponseCode" json:"code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1365,12 +1379,14 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\x13RecordEntryResponse\x12\x19\n" +
 	"\bentry_id\x18\x01 \x01(\tR\aentryId\x12*\n" +
 	"\x04code\x18\x02 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x91\x01\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\xb2\x01\n" +
 	"\x12SchemaRequestField\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12)\n" +
 	"\x04type\x18\x03 \x01(\x0e2\x15.tally.v1.FieldFormatR\x04type\x12\x1a\n" +
-	"\brequired\x18\x04 \x01(\bR\brequired\"\x81\x01\n" +
+	"\brequired\x18\x04 \x01(\bR\brequired\x12\x1f\n" +
+	"\venum_values\x18\x05 \x03(\tR\n" +
+	"enumValues\"\x81\x01\n" +
 	"\x13CreateSchemaRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x124\n" +
@@ -1410,18 +1426,18 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"patch_data\x18\x02 \x01(\tR\tpatchData\"\x9c\x01\n" +
 	"\x13UpdateEntryResponse\x124\n" +
 	"\rupdated_entry\x18\x01 \x01(\v2\x0f.tally.v1.EntryR\fupdatedEntry\x12*\n" +
-	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
-	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"/\n" +
+	"\x04code\x18\x02 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"/\n" +
 	"\x12DeleteTallyRequest\x12\x19\n" +
 	"\btally_id\x18\x01 \x01(\tR\atallyId\"f\n" +
 	"\x13DeleteTallyResponse\x12*\n" +
-	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
-	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"/\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"/\n" +
 	"\x12DeleteEntryRequest\x12\x19\n" +
 	"\bentry_id\x18\x01 \x01(\tR\aentryId\"f\n" +
 	"\x13DeleteEntryResponse\x12*\n" +
-	"\x04code\x18\x06 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
-	"\rerror_message\x18\a \x01(\tR\ferrorMessage*\xf4\x01\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x16.tally.v1.ResponseCodeR\x04code\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage*\xf4\x01\n" +
 	"\fResponseCode\x12\x1d\n" +
 	"\x19RESPONSE_CODE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10RESPONSE_CODE_OK\x10\x01\x12!\n" +
@@ -1429,7 +1445,7 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\x17RESPONSE_CODE_NOT_FOUND\x10\x03\x12!\n" +
 	"\x1dRESPONSE_CODE_DUPLICATE_FIELD\x10\x04\x12*\n" +
 	"&RESPONSE_CODE_SCHEMA_VALIDATION_FAILED\x10\x05\x12 \n" +
-	"\x1cRESPONSE_CODE_INTERNAL_ERROR\x10\x06*\xf6\x01\n" +
+	"\x1cRESPONSE_CODE_INTERNAL_ERROR\x10\x06*\xa9\x02\n" +
 	"\vFieldFormat\x12\x1c\n" +
 	"\x18FIELD_FORMAT_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FIELD_FORMAT_STRING\x10\x01\x12\x18\n" +
@@ -1439,7 +1455,10 @@ const file_tally_v1_service_proto_rawDesc = "" +
 	"\x16FIELD_FORMAT_DATE_TIME\x10\x05\x12\x15\n" +
 	"\x11FIELD_FORMAT_DATE\x10\x06\x12\x15\n" +
 	"\x11FIELD_FORMAT_TIME\x10\a\x12\x19\n" +
-	"\x15FIELD_FORMAT_DURATION\x10\b*\x1e\n" +
+	"\x15FIELD_FORMAT_DURATION\x10\b\x12\x17\n" +
+	"\x13FIELD_FORMAT_ONE_OF\x10\t\x12\x18\n" +
+	"\x14FIELD_FORMAT_MANY_OF\x10\n" +
+	"*\x1e\n" +
 	"\x05Error\x12\x15\n" +
 	"\x11ERROR_UNSPECIFIED\x10\x00Bi\n" +
 	"\fcom.tally.v1B\fServiceProtoP\x01Z\n" +

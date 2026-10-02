@@ -28,6 +28,8 @@ enum FieldFormat {
   FIELD_FORMAT_DATE = 6;
   FIELD_FORMAT_TIME = 7;
   FIELD_FORMAT_DURATION = 8;
+  FIELD_FORMAT_ONE_OF = 9;
+  FIELD_FORMAT_MANY_OF = 10;
 }
 
 enum Error {
@@ -70,6 +72,7 @@ message SchemaRequestField {
   string description = 2;
   FieldFormat type = 3;
   bool required = 4;
+  repeated string enum_values = 5; // field only used when type is TYPE ONE_OF or MANY_OF
 }
 
 message CreateSchemaRequest {
@@ -126,8 +129,8 @@ message UpdateEntryRequest {
 
 message UpdateEntryResponse {
   Entry updated_entry = 1;
-  ResponseCode code = 6;
-  string error_message = 7;
+  ResponseCode code = 2;
+  string error_message = 3;
 }
 
 message DeleteTallyRequest {
@@ -135,8 +138,8 @@ message DeleteTallyRequest {
 }
 
 message DeleteTallyResponse {
-  ResponseCode code = 6;
-  string error_message = 7;
+  ResponseCode code = 1;
+  string error_message = 2;
 }
 
 message DeleteEntryRequest {
@@ -144,6 +147,6 @@ message DeleteEntryRequest {
 }
 
 message DeleteEntryResponse {
-  ResponseCode code = 6;
-  string error_message = 7;
+  ResponseCode code = 1;
+  string error_message = 2;
 }
