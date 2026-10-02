@@ -94,7 +94,11 @@ func CreateSchema(requestBytes []byte) []byte {
 				if err != nil {
 					return nil, fmt.Errorf("invalid type %s for field %s: %w", field.GetName(), field.GetType(), err)
 				}
-				sr.WithField(field.GetName(), field.GetDescription(), fieldType, field.GetRequired())
+				if fieldType == schemas.TypeManyOf || fieldType == schemas.TypeOneOf {
+					sr.WithEnumField(field.GetName(), field.GetDescription(), fieldType, field.GetRequired(), field.GetEnumValues())
+				} else {
+					sr.WithField(field.GetName(), field.GetDescription(), fieldType, field.GetRequired())
+				}
 			}
 
 			schema, err := st.service.CreateSchema(st.ctx, sr)

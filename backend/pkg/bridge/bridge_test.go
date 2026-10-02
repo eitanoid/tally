@@ -45,6 +45,13 @@ func TestBridge_CreateSchema(t *testing.T) {
 						Type:        tallyv1.FieldFormat_FIELD_FORMAT_INTEGER,
 						Required:    false,
 					},
+					{
+						Name:        "book form",
+						Description: "Form of book",
+						Type:        tallyv1.FieldFormat_FIELD_FORMAT_ONE_OF,
+						Required:    false,
+						EnumValues:  []string{"paperback", "hardback", "audiobook"},
+					},
 				},
 			},
 			wantCode: tallyv1.ResponseCode_RESPONSE_CODE_OK,

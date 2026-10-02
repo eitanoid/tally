@@ -28,6 +28,10 @@ func mapProtoTypeToDomain(pt tallyv1.FieldFormat) (schemas.SupportedType, error)
 		return schemas.TypeTime, nil
 	case tallyv1.FieldFormat_FIELD_FORMAT_DURATION:
 		return schemas.TypeDuration, nil
+	case tallyv1.FieldFormat_FIELD_FORMAT_ONE_OF:
+		return schemas.TypeOneOf, nil
+	case tallyv1.FieldFormat_FIELD_FORMAT_MANY_OF:
+		return schemas.TypeManyOf, nil
 	default:
 		return "", fmt.Errorf("unsupported or unspecified proto field type: %v", pt)
 	}
