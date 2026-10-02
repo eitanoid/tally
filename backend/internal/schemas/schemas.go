@@ -38,11 +38,16 @@ const (
 	TypeTime SupportedType = "time"
 	// TypeDuration represents an intent to store a Duration in a schema field.
 	TypeDuration SupportedType = "duration"
+	// TypeOneOf represents an intent to store a single enum value.
+	TypeOneOf SupportedType = "one-of"
+	// TypeManyOf represents an intent to store an enum array.
+	TypeManyOf SupportedType = "many-of"
 )
 
 // Supported primitive types for JSON schema objects.
 const (
 	jsonString  = "string"
+	jsonArray   = "array"
 	jsonInteger = "integer"
 	jsonNumber  = "number"
 	jsonBoolean = "boolean"
@@ -67,7 +72,7 @@ var (
 // Valid validates a SupportedType
 func Valid(t SupportedType) bool {
 	switch t {
-	case TypeString, TypeInt, TypeFloat, TypeBool, TypeDateTime, TypeDate, TypeTime, TypeDuration:
+	case TypeString, TypeInt, TypeFloat, TypeBool, TypeDateTime, TypeDate, TypeTime, TypeDuration, TypeOneOf, TypeManyOf:
 		return true
 	default:
 		return false
@@ -81,6 +86,7 @@ type FieldDefinition struct {
 	Description string        `json:"description,omitempty"`
 	Type        SupportedType `json:"type"`
 	Required    bool          `json:"required"`
+	EnumValues  []string      `json:"enum_values"` // optional field for one-of and many-of enum fields
 }
 
 // SchemaRequest is the payload sent when a user creates a new tally.
@@ -148,6 +154,18 @@ func BuildJSONSchema(req SchemaRequest) (*jsonschema.Schema, error) {
 		case TypeDuration:
 			propSchema.Type = jsonString
 			propSchema.Format = jsonFormatDuration
+		case TypeOneOf:
+			propSchema.Type = jsonString
+			propSchema.Enum = toAnySlice(field.EnumValues)
+		case TypeManyOf:
+			minItems := 1
+			propSchema.Type = jsonArray
+			propSchema.UniqueItems = true
+			propSchema.MinItems = &minItems
+			propSchema.Items = &jsonschema.Schema{
+				Type: jsonString,
+				Enum: toAnySlice(field.EnumValues),
+			}
 		default:
 			return nil, fmt.Errorf("unsupported field type: %s", field.Type)
 		}
@@ -182,12 +200,40 @@ func NewSchemaRequest(name, description string) *SchemaRequest {
 	}
 }
 
-// WithField adds a field to a SchemaRequest and records the first error encountered.
+// WithField adds a scalar field to a SchemaRequest.
 func (s *SchemaRequest) WithField(name, description string, typ SupportedType, required bool) *SchemaRequest {
 	if s.err != nil {
-		return s // Short-circuit if an error already occurred earlier in the chain
+		return s
 	}
 
+	if typ == TypeOneOf || typ == TypeManyOf {
+		s.err = fmt.Errorf("field '%s' has enum type '%s'; use WithEnumField instead", name, typ)
+		return s
+	}
+
+	return s.addField(name, description, typ, required, nil)
+}
+
+// WithEnumField adds an enum-based field (TypeOneOf / TypeManyOf) with allowed values.
+func (s *SchemaRequest) WithEnumField(name, description string, typ SupportedType, required bool, enumValues []string) *SchemaRequest {
+	if s.err != nil {
+		return s
+	}
+
+	if typ != TypeOneOf && typ != TypeManyOf {
+		s.err = fmt.Errorf("field '%s' with type '%s' is not an enum type", name, typ)
+		return s
+	}
+
+	if len(enumValues) == 0 {
+		s.err = fmt.Errorf("enum field '%s' requires at least one enum value", name)
+		return s
+	}
+
+	return s.addField(name, description, typ, required, enumValues)
+}
+
+func (s *SchemaRequest) addField(name, description string, typ SupportedType, required bool, enumValues []string) *SchemaRequest {
 	key := Slugify(name)
 	if key == "" {
 		s.err = fmt.Errorf("field name '%s' produced an empty key", name)
@@ -212,6 +258,7 @@ func (s *SchemaRequest) WithField(name, description string, typ SupportedType, r
 		Description: description,
 		Type:        typ,
 		Required:    required,
+		EnumValues:  enumValues,
 	})
 	return s
 }
@@ -290,4 +337,12 @@ func ValidatePatch(jsonPatch []byte) error {
 	}
 
 	return nil
+}
+
+func toAnySlice[T any](input []T) []any {
+	output := make([]any, len(input))
+	for i, v := range input {
+		output[i] = v
+	}
+	return output
 }
