@@ -495,7 +495,7 @@ type SchemaRequestField struct {
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Type          FieldFormat            `protobuf:"varint,3,opt,name=type,proto3,enum=tally.v1.FieldFormat" json:"type,omitempty"`
 	Required      bool                   `protobuf:"varint,4,opt,name=required,proto3" json:"required,omitempty"`
-	EnumValues    []string               `protobuf:"bytes,5,rep,name=enum_values,json=enumValues,proto3" json:"enum_values,omitempty"`
+	EnumValues    []string               `protobuf:"bytes,5,rep,name=enum_values,json=enumValues,proto3" json:"enum_values,omitempty"` // field only used when type is TYPE ONE_OF or MANY_OF
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
